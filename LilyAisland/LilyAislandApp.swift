@@ -6,19 +6,17 @@ enum IslandMode {
     case collapsed
     case hovered
     case expanded
+    case volume
 }
 
 class IslandState: ObservableObject {
     @Published var mode: IslandMode = .collapsed
     var monitor = SystemMonitor()
     var media = MediaMonitor()
+    var volume = VolumeMonitor()
     
-    // 判断媒体是否有真实内容（从而决定是否变宽）
-    var isMediaActive: Bool {
-        return media.trackName != "未在播放"
-    }
+    var isMediaActive: Bool { return media.trackName != "未在播放" }
     
-    // --- 原始设定的尺寸 (严格保持不变) ---
     let collapsedWidth: CGFloat = 180
     let islandHeight: CGFloat = 34
     
@@ -28,24 +26,33 @@ class IslandState: ObservableObject {
     let expandedWidth: CGFloat = 500
     let expandedHeight: CGFloat = 200
     
-    // --- 新增：当有音乐时，迷你胶囊形态的特殊宽度 ---
     let playingCompactWidth: CGFloat = 260
     let playingHoveredWidth: CGFloat = 270
+    
+    let volumeWidth: CGFloat = 360
+    let volumeHeight: CGFloat = 34
     
     let invisibleHitboxHeight: CGFloat = 12
     
     private var cancellables = Set<AnyCancellable>()
     
     init() {
-        monitor.objectWillChange
-            .sink { [weak self] _ in
-                DispatchQueue.main.async { self?.objectWillChange.send() }
-            }
-            .store(in: &cancellables)
+        monitor.objectWillChange.sink { [weak self] _ in DispatchQueue.main.async { self?.objectWillChange.send() } }.store(in: &cancellables)
+        media.objectWillChange.sink { [weak self] _ in DispatchQueue.main.async { self?.objectWillChange.send() } }.store(in: &cancellables)
         
-        media.objectWillChange
-            .sink { [weak self] _ in
-                DispatchQueue.main.async { self?.objectWillChange.send() }
+        volume.$showVolumeUI
+            .sink { [weak self] show in
+                DispatchQueue.main.async {
+                    // 【核心动画修复】：为音量模式的呼出和收回，套上和音乐播放器同款的弹簧动画！
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                        if show {
+                            self?.mode = .volume
+                        } else if self?.mode == .volume {
+                            self?.mode = .collapsed
+                        }
+                    }
+                    self?.objectWillChange.send()
+                }
             }
             .store(in: &cancellables)
     }
@@ -55,6 +62,7 @@ class IslandState: ObservableObject {
         case .collapsed: return isMediaActive ? playingCompactWidth : collapsedWidth
         case .hovered: return isMediaActive ? playingHoveredWidth : hoveredWidth
         case .expanded: return expandedWidth
+        case .volume: return volumeWidth
         }
     }
     
@@ -63,6 +71,7 @@ class IslandState: ObservableObject {
         case .collapsed: return islandHeight
         case .hovered: return hoveredHeight
         case .expanded: return expandedHeight
+        case .volume: return volumeHeight
         }
     }
 }
@@ -81,6 +90,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         state.monitor.start()
         state.media.start()
+        state.volume.start()
         setupIslandWindow()
         setupMenuBar()
     }
@@ -88,7 +98,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func setupIslandWindow() {
         let contentView = ContentView(state: state)
         let hostingView = NSHostingView(rootView: contentView)
-        
         let canvasWidth = state.expandedWidth
         let canvasHeight = state.expandedHeight + state.invisibleHitboxHeight
         guard let screen = NSScreen.main else { return }
@@ -97,41 +106,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let y = screen.frame.maxY - canvasHeight
         let canvasRect = NSRect(x: x, y: y, width: canvasWidth, height: canvasHeight)
         
-        panel = NSPanel(
-            contentRect: canvasRect,
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-        
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
-        panel.hasShadow = false
-        panel.level = .statusBar
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.contentView = hostingView
-        panel.acceptsMouseMovedEvents = true
-        panel.orderFront(nil)
+        panel = NSPanel(contentRect: canvasRect, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.isOpaque = false; panel.backgroundColor = .clear; panel.hasShadow = false; panel.level = .statusBar
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]; panel.contentView = hostingView
+        panel.acceptsMouseMovedEvents = true; panel.orderFront(nil)
     }
     
     func setupMenuBar() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Lily Island")
-        }
-        
+        if let button = statusItem.button { button.image = NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Lily Island") }
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "偏好设置...", action: #selector(showSettings), keyEquivalent: ","))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "退出 Lily Island", action: #selector(quitApp), keyEquivalent: "q"))
         statusItem.menu = menu
     }
-    
-    @objc func showSettings() {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-    
+    @objc func showSettings() { NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil); NSApp.activate(ignoringOtherApps: true) }
     @objc func quitApp() { NSApplication.shared.terminate(nil) }
 }
 
@@ -141,9 +131,8 @@ struct SettingsView: View {
         Form {
             Section(header: Text("通用设置").font(.headline)) {
                 Toggle("开机自动启动", isOn: $launchAtLogin).onChange(of: launchAtLogin) { _ in }
-                Text("媒体控制面板已就绪...").foregroundColor(.gray).padding(.top, 10)
+                Text("音量监控模块已就绪...").foregroundColor(.gray).padding(.top, 10)
             }
-        }
-        .padding(30).frame(width: 350, height: 200)
+        }.padding(30).frame(width: 350, height: 200)
     }
 }
