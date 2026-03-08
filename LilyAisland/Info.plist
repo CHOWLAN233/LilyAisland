@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>LilyA Island 需要此权限来获取和控制当前播放的音乐状态</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict/>
