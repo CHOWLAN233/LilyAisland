@@ -39,17 +39,33 @@ struct EqualizerBar: View {
 struct ContentView: View {
     @ObservedObject var state: IslandState
     
+    @AppStorage("enable_haptics") private var enableHaptics = true
+    @AppStorage("island_x_offset") private var islandXOffset: Double = 0.0
+    @AppStorage("focus_hide_label") private var hideLabel = false
+    
+    @AppStorage("default_y_offset") private var defaultYOffset: Double = 0.0
+    @AppStorage("capsule_y_offset") private var capsuleYOffset: Double = 0.0
+    
     @State private var playButtonScale: CGFloat = 1.0
     @State private var prevButtonScale: CGFloat = 1.0
     @State private var nextButtonScale: CGFloat = 1.0
     @State private var coverScale: CGFloat = 1.0
     
+    var currentYOffset: CGFloat {
+        if state.mode == .collapsed && !state.isMediaActive {
+            return CGFloat(defaultYOffset)
+        } else {
+            return CGFloat(capsuleYOffset)
+        }
+    }
+    
+    // 🌟 核心修复：完美的胶囊体弧度算法！
     var currentCornerRadius: CGFloat {
-        switch state.mode {
-        case .collapsed: return 17
-        case .hovered: return 18
-        case .expanded: return 32
-        case .volume: return 17
+        if state.mode == .expanded {
+            return 32 // 展开状态的大面板，采用类似 iOS 的圆角
+        } else {
+            // 收束、悬浮、音量、勿扰等状态下，最完美的胶囊弧度永远等于它高度的一半
+            return state.currentHeight / 2
         }
     }
     
@@ -57,22 +73,18 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            ZStack {
-                FlushTopShape(cornerRadius: currentCornerRadius).fill(Color.black)
+            ZStack(alignment: .top) {
+                RoundedRectangle(cornerRadius: currentCornerRadius, style: .continuous)
+                    .fill(Color.black)
+                    .padding(.top, -currentCornerRadius)
                 
                 if state.mode == .volume {
-                    // --- 【完美音量布局】：左耳图标，右耳滑动条 ---
                     HStack(spacing: 0) {
-                        // 左耳：干净的音量喇叭图标
                         Image(systemName: state.volume.volume == 0 ? "speaker.slash.fill" : (state.volume.volume < 0.5 ? "speaker.wave.1.fill" : "speaker.wave.2.fill"))
                             .foregroundColor(.white)
                             .font(.system(size: 16))
                             .frame(width: 24, height: 24)
-                        
-                        // 中间：不可视的透明护城河，越过物理刘海
                         Spacer()
-                        
-                        // 右耳：紧凑优雅的音量进度条
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
                                 Capsule().fill(Color.gray.opacity(0.3)).frame(height: 6)
@@ -86,8 +98,49 @@ struct ContentView: View {
                     .padding(.horizontal, 18)
                     .frame(height: state.currentHeight)
                     
+                } else if state.mode == .brightness {
+                    HStack(spacing: 0) {
+                        Image(systemName: "sun.max.fill")
+                            .foregroundColor(.white)
+                            .font(.system(size: 16))
+                            .frame(width: 24, height: 24)
+                        Spacer()
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Color.gray.opacity(0.3)).frame(height: 6)
+                                Capsule().fill(Color.white)
+                                    .frame(width: geo.size.width * state.brightness.brightness, height: 6)
+                                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: state.brightness.brightness)
+                            }
+                        }
+                        .frame(width: 60, height: 6)
+                    }
+                    .padding(.horizontal, 18)
+                    .frame(height: state.currentHeight)
+                    
+                } else if state.mode == .dnd {
+                    HStack(spacing: 0) {
+                        Image(systemName: state.dnd.isDNDOn ? "moon.fill" : "moon")
+                            .foregroundColor(state.dnd.isDNDOn ? .indigo : .white)
+                            .font(.system(size: 16))
+                            .frame(width: 24, height: 24)
+                        
+                        Spacer()
+                        
+                        if !hideLabel {
+                            Text(state.dnd.isDNDOn ? "On" : "Off")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(state.dnd.isDNDOn ? .white : .gray)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 4)
+                                .background(state.dnd.isDNDOn ? Color.indigo : Color.white.opacity(0.1))
+                                .clipShape(Capsule())
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .frame(height: state.currentHeight)
+                    
                 } else if state.mode == .expanded {
-                    // --- 完全展开 ---
                     VStack(spacing: 16) {
                         HStack(spacing: 16) {
                             if let nsImage = state.media.artworkImage {
@@ -125,7 +178,6 @@ struct ContentView: View {
                     }.padding(.horizontal, 32).padding(.top, 42).padding(.bottom, 24)
                     
                 } else {
-                    // --- 折叠 / 悬停状态 ---
                     if state.isMediaActive {
                         HStack(spacing: 0) {
                             if let nsImage = state.media.artworkImage { Image(nsImage: nsImage).resizable().scaledToFill().frame(width: 24, height: 24).clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous)) }
@@ -147,45 +199,57 @@ struct ContentView: View {
                 }
             }
             .frame(width: state.currentWidth, height: state.currentHeight)
-            // 【UI级兜底动画】：确保所有的形变状态 (mode的改变) 都能触发丝滑过渡
-            .animation(.spring(response: 0.4, dampingFraction: 0.75), value: state.mode)
-            .animation(.spring(response: 0.4, dampingFraction: 0.75), value: state.isMediaActive)
+            .animation(.spring(response: 0.4, dampingFraction: 1.0), value: state.mode)
+            .animation(.spring(response: 0.4, dampingFraction: 1.0), value: state.isMediaActive)
             .onTapGesture {
-                guard state.mode != .volume else { return }
-                if state.mode == .hovered { NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now); withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { state.mode = .expanded } }
+                guard state.mode != .volume && state.mode != .brightness && state.mode != .dnd else { return }
+                if state.mode == .hovered {
+                    triggerHaptic(.generic)
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { state.mode = .expanded }
+                }
             }
-            if state.mode != .expanded && state.mode != .volume { Color.clear.frame(width: state.hoveredWidth, height: state.invisibleHitboxHeight) }
+            
+            if state.mode != .expanded && state.mode != .volume && state.mode != .brightness && state.mode != .dnd {
+                Color.clear.frame(width: state.currentWidth, height: state.invisibleHitboxHeight)
+            }
         }
         .contentShape(Rectangle())
         .onHover { hovering in
-            guard state.mode != .volume else { return }
-            if hovering { if state.mode == .collapsed { NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now); withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { state.mode = .hovered } } }
-            else { if state.mode != .collapsed { NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now); withAnimation(.spring(response: 0.32, dampingFraction: 0.95)) { state.mode = .collapsed } } }
+            guard state.mode != .volume && state.mode != .brightness && state.mode != .dnd else { return }
+            if hovering {
+                if state.mode == .collapsed {
+                    triggerHaptic(.generic)
+                    withAnimation(.spring(response: 0.32, dampingFraction: 1.0)) { state.mode = .hovered }
+                }
+            }
+            else {
+                if state.mode != .collapsed {
+                    triggerHaptic(.generic)
+                    withAnimation(.spring(response: 0.32, dampingFraction: 1.0)) { state.mode = .collapsed }
+                }
+            }
         }
         .frame(width: state.expandedWidth, height: state.expandedHeight + state.invisibleHitboxHeight, alignment: .top)
+        .offset(x: CGFloat(islandXOffset), y: currentYOffset)
+    }
+    
+    private func triggerHaptic(_ pattern: NSHapticFeedbackManager.FeedbackPattern) {
+        if enableHaptics {
+            NSHapticFeedbackManager.defaultPerformer.perform(pattern, performanceTime: .now)
+        }
     }
     
     private func triggerButtonAnimation(for scale: Binding<CGFloat>, triggerCover: Bool) {
-        let haptic = NSHapticFeedbackManager.defaultPerformer
-        haptic.perform(.generic, performanceTime: .now)
+        triggerHaptic(.generic)
         withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) { scale.wrappedValue = 0.7; if triggerCover { self.coverScale = 0.85 } }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            haptic.perform(.alignment, performanceTime: .now)
+            triggerHaptic(.alignment)
             withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { scale.wrappedValue = 1.0; if triggerCover { self.coverScale = 1.0 } }
         }
     }
+    
     private func formatTime(_ seconds: Double) -> String {
         if seconds <= 0 || seconds.isNaN { return "0:00" }
         return String(format: "%d:%02d", Int(seconds) / 60, Int(seconds) % 60)
-    }
-}
-
-struct FlushTopShape: Shape {
-    var cornerRadius: CGFloat; var animatableData: CGFloat { get { cornerRadius } set { cornerRadius = newValue } }
-    func path(in rect: CGRect) -> Path {
-        var path = Path(); path.move(to: CGPoint(x: 0, y: 0)); path.addLine(to: CGPoint(x: rect.maxX, y: 0)); path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - cornerRadius))
-        path.addArc(center: CGPoint(x: rect.maxX - cornerRadius, y: rect.maxY - cornerRadius), radius: cornerRadius, startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
-        path.addLine(to: CGPoint(x: cornerRadius, y: rect.maxY)); path.addArc(center: CGPoint(x: cornerRadius, y: rect.maxY - cornerRadius), radius: cornerRadius, startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
-        path.closeSubpath(); return path
     }
 }
