@@ -8,7 +8,8 @@ enum IslandMode {
     case expanded
     case volume
     case brightness
-    case dnd // 勿扰模式
+    case dnd
+    case battery // 🌟 电池模式
 }
 
 class IslandState: ObservableObject {
@@ -20,25 +21,20 @@ class IslandState: ObservableObject {
     var volume = VolumeMonitor()
     var brightness = BrightnessMonitor()
     var dnd = DNDMonitor()
+    var battery = BatteryMonitor() // 🌟 电池监听器
     
     private var mediaPauseTimer: Timer?
     
-    // --- 【完美尺寸配置】 ---
     let collapsedWidth: CGFloat = 180
     let islandHeight: CGFloat = 32
-    
     let hoveredWidth: CGFloat = 195
     let hoveredHeight: CGFloat = 36
-    
     let expandedWidth: CGFloat = 500
     let expandedHeight: CGFloat = 200
-    
     let playingCompactWidth: CGFloat = 260
-    let playingCompactHeight: CGFloat = 34 // 🌟 新增：音乐播放时的折叠高度
-    
+    let playingCompactHeight: CGFloat = 34
     let playingHoveredWidth: CGFloat = 268
-    let playingHoveredHeight: CGFloat = 38 // 🌟 新增：音乐播放时的悬浮高度
-    
+    let playingHoveredHeight: CGFloat = 38
     let volumeWidth: CGFloat = 360
     let volumeHeight: CGFloat = 34
     
@@ -91,6 +87,19 @@ class IslandState: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+            
+        // 🌟 电池动画触发
+        battery.$showBatteryUI
+            .sink { [weak self] show in
+                DispatchQueue.main.async {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) {
+                        if show { self?.mode = .battery }
+                        else if self?.mode == .battery { self?.mode = .collapsed }
+                    }
+                    self?.objectWillChange.send()
+                }
+            }
+            .store(in: &cancellables)
     }
     
     private func handleMediaStateChange() {
@@ -121,17 +130,16 @@ class IslandState: ObservableObject {
         case .collapsed: return isMediaActive ? playingCompactWidth : collapsedWidth
         case .hovered: return isMediaActive ? playingHoveredWidth : hoveredWidth
         case .expanded: return expandedWidth
-        case .volume, .brightness, .dnd: return volumeWidth
+        case .volume, .brightness, .dnd, .battery: return volumeWidth // 🌟 加入电池宽度
         }
     }
     
-    // 🌟 核心修改：让高度也和宽度一样，区分音乐播放状态！
     var currentHeight: CGFloat {
         switch mode {
         case .collapsed: return isMediaActive ? playingCompactHeight : islandHeight
         case .hovered: return isMediaActive ? playingHoveredHeight : hoveredHeight
         case .expanded: return expandedHeight
-        case .volume, .brightness, .dnd: return volumeHeight
+        case .volume, .brightness, .dnd, .battery: return volumeHeight // 🌟 加入电池高度
         }
     }
 }
@@ -173,6 +181,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         state.volume.start()
         state.brightness.start()
         state.dnd.start()
+        state.battery.start() // 🌟 启动电池服务
         
         setupIslandWindow()
     }

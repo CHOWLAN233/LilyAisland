@@ -47,7 +47,7 @@ struct SettingsView: View {
                 case .focus:
                     FocusSettingsView()   // 🌟 路由到勿扰模式页面
                 case .battery:
-                    Text("Battery Settings Coming Soon...")
+                    BatterySettingsView()
                 case .connectivity:
                     Text("Connectivity Settings Coming Soon...")
                 case .display:

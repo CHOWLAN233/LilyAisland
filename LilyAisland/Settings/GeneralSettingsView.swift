@@ -5,9 +5,10 @@ struct GeneralSettingsView: View {
     @AppStorage("launch_at_login") private var launchAtLogin = false
     @AppStorage("enable_haptics") private var enableHaptics = true
     
-    @AppStorage("island_x_offset") private var islandXOffset: Double = 0.0
+    // 🌟 新增：全屏模式下是否允许鼠标悬浮触发
+    @AppStorage("hover_in_fullscreen") private var hoverInFullscreen = false
     
-    // 🌟 将原有的一个 Y 偏移，分离为两个独立储存的偏移！
+    @AppStorage("island_x_offset") private var islandXOffset: Double = 0.0
     @AppStorage("default_y_offset") private var defaultYOffset: Double = 0.0
     @AppStorage("capsule_y_offset") private var capsuleYOffset: Double = 0.0
     
@@ -36,7 +37,10 @@ struct GeneralSettingsView: View {
                 Toggle("Haptic Feedback", isOn: $enableHaptics)
                     .toggleStyle(.switch)
                 
-                // 水平整体微调
+                // 🌟 新增的 UI 开关
+                Toggle("Hover in Full Screen", isOn: $hoverInFullscreen)
+                    .toggleStyle(.switch)
+                
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Island X-Offset")
@@ -54,7 +58,6 @@ struct GeneralSettingsView: View {
                 }
                 .padding(.vertical, 4)
                 
-                // 🌟 新增：默认(折叠)状态垂直微调
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Default Y-Offset")
@@ -72,7 +75,6 @@ struct GeneralSettingsView: View {
                 }
                 .padding(.vertical, 4)
                 
-                // 🌟 新增：胶囊(展开)状态垂直微调
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Capsule Y-Offset")
