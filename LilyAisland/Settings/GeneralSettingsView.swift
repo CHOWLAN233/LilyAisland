@@ -12,6 +12,9 @@ struct GeneralSettingsView: View {
     @AppStorage("default_y_offset") private var defaultYOffset: Double = 0.0
     @AppStorage("capsule_y_offset") private var capsuleYOffset: Double = 0.0
     
+    // 🌟 新增：刘海倒角半径设置 (默认 7.0 更贴近物理真实感)
+    @AppStorage("notch_radius") private var notchRadius: Double = 7.0
+    
     var body: some View {
         Form {
             HStack {
@@ -40,6 +43,24 @@ struct GeneralSettingsView: View {
                 // 🌟 新增的 UI 开关
                 Toggle("Hover in Full Screen", isOn: $hoverInFullscreen)
                     .toggleStyle(.switch)
+                
+                // 🌟 新增的刘海倒角半径调节器
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Notch Curve Radius")
+                        Spacer()
+                        Text(String(format: "%.1f pt", notchRadius))
+                            .foregroundColor(.gray)
+                            .font(.system(.body, design: .monospaced))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.gray.opacity(0.2))
+                            .clipShape(Capsule())
+                    }
+                    Slider(value: $notchRadius, in: 4.0...16.0, step: 0.5)
+                        .tint(.gray)
+                }
+                .padding(.vertical, 4)
                 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {

@@ -9,7 +9,7 @@ enum IslandMode {
     case volume
     case brightness
     case dnd
-    case battery // 🌟 电池模式
+    case battery
 }
 
 class IslandState: ObservableObject {
@@ -21,16 +21,25 @@ class IslandState: ObservableObject {
     var volume = VolumeMonitor()
     var brightness = BrightnessMonitor()
     var dnd = DNDMonitor()
-    var battery = BatteryMonitor() // 🌟 电池监听器
+    var battery = BatteryMonitor()
     
     private var mediaPauseTimer: Timer?
     
     let collapsedWidth: CGFloat = 180
     let islandHeight: CGFloat = 32
-    let hoveredWidth: CGFloat = 195
+    let hoveredWidth: CGFloat = 203
     let hoveredHeight: CGFloat = 36
     let expandedWidth: CGFloat = 500
-    let expandedHeight: CGFloat = 200
+    
+    // 🌟 动态高度：音乐和电池面板完全独立
+    var expandedHeight: CGFloat {
+        if isMediaActive {
+            return 200
+        } else {
+            return 130
+        }
+    }
+    
     let playingCompactWidth: CGFloat = 260
     let playingCompactHeight: CGFloat = 34
     let playingHoveredWidth: CGFloat = 268
@@ -45,6 +54,8 @@ class IslandState: ObservableObject {
     init() {
         monitor.objectWillChange.sink { [weak self] _ in DispatchQueue.main.async { self?.objectWillChange.send() } }.store(in: &cancellables)
         
+        battery.objectWillChange.sink { [weak self] _ in DispatchQueue.main.async { self?.objectWillChange.send() } }.store(in: &cancellables)
+        
         media.objectWillChange.sink { [weak self] _ in
             DispatchQueue.main.async {
                 self?.handleMediaStateChange()
@@ -52,54 +63,13 @@ class IslandState: ObservableObject {
             }
         }.store(in: &cancellables)
         
-        volume.$showVolumeUI
-            .sink { [weak self] show in
-                DispatchQueue.main.async {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) {
-                        if show { self?.mode = .volume }
-                        else if self?.mode == .volume { self?.mode = .collapsed }
-                    }
-                    self?.objectWillChange.send()
-                }
-            }
-            .store(in: &cancellables)
-            
-        brightness.$showBrightnessUI
-            .sink { [weak self] show in
-                DispatchQueue.main.async {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) {
-                        if show { self?.mode = .brightness }
-                        else if self?.mode == .brightness { self?.mode = .collapsed }
-                    }
-                    self?.objectWillChange.send()
-                }
-            }
-            .store(in: &cancellables)
-            
-        dnd.$showDNDUI
-            .sink { [weak self] show in
-                DispatchQueue.main.async {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) {
-                        if show { self?.mode = .dnd }
-                        else if self?.mode == .dnd { self?.mode = .collapsed }
-                    }
-                    self?.objectWillChange.send()
-                }
-            }
-            .store(in: &cancellables)
-            
-        // 🌟 电池动画触发
-        battery.$showBatteryUI
-            .sink { [weak self] show in
-                DispatchQueue.main.async {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) {
-                        if show { self?.mode = .battery }
-                        else if self?.mode == .battery { self?.mode = .collapsed }
-                    }
-                    self?.objectWillChange.send()
-                }
-            }
-            .store(in: &cancellables)
+        volume.$showVolumeUI.sink { [weak self] show in DispatchQueue.main.async { withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) { if show { self?.mode = .volume } else if self?.mode == .volume { self?.mode = .collapsed } }; self?.objectWillChange.send() } }.store(in: &cancellables)
+        
+        brightness.$showBrightnessUI.sink { [weak self] show in DispatchQueue.main.async { withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) { if show { self?.mode = .brightness } else if self?.mode == .brightness { self?.mode = .collapsed } }; self?.objectWillChange.send() } }.store(in: &cancellables)
+        
+        dnd.$showDNDUI.sink { [weak self] show in DispatchQueue.main.async { withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) { if show { self?.mode = .dnd } else if self?.mode == .dnd { self?.mode = .collapsed } }; self?.objectWillChange.send() } }.store(in: &cancellables)
+        
+        battery.$showBatteryUI.sink { [weak self] show in DispatchQueue.main.async { withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) { if show { self?.mode = .battery } else if self?.mode == .battery { self?.mode = .collapsed } }; self?.objectWillChange.send() } }.store(in: &cancellables)
     }
     
     private func handleMediaStateChange() {
@@ -130,7 +100,7 @@ class IslandState: ObservableObject {
         case .collapsed: return isMediaActive ? playingCompactWidth : collapsedWidth
         case .hovered: return isMediaActive ? playingHoveredWidth : hoveredWidth
         case .expanded: return expandedWidth
-        case .volume, .brightness, .dnd, .battery: return volumeWidth // 🌟 加入电池宽度
+        case .volume, .brightness, .dnd, .battery: return volumeWidth
         }
     }
     
@@ -139,7 +109,7 @@ class IslandState: ObservableObject {
         case .collapsed: return isMediaActive ? playingCompactHeight : islandHeight
         case .hovered: return isMediaActive ? playingHoveredHeight : hoveredHeight
         case .expanded: return expandedHeight
-        case .volume, .brightness, .dnd, .battery: return volumeHeight // 🌟 加入电池高度
+        case .volume, .brightness, .dnd, .battery: return volumeHeight
         }
     }
 }
@@ -181,7 +151,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         state.volume.start()
         state.brightness.start()
         state.dnd.start()
-        state.battery.start() // 🌟 启动电池服务
+        state.battery.start()
         
         setupIslandWindow()
     }
@@ -203,6 +173,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         panel.acceptsMouseMovedEvents = true; panel.orderFront(nil)
     }
     
+    // 🌟 这里完美恢复了你原有的窗口生成逻辑，一行不少！
     func showSettingsWindow() {
         if settingsWindow == nil {
             let contentView = SettingsView()
