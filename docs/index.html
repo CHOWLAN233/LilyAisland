@@ -4,248 +4,178 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LilyAisland — Mac 灵动岛</title>
-<meta name="description" content="LilyAisland 将 iPhone 灵动岛体验带到 Mac。悬浮在屏幕顶部的交互式胶囊控件。">
+<meta name="description" content="LilyAisland 将 iPhone 灵动岛体验带到 Mac。悬浮菜单栏的交互式胶囊控件。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='8' width='24' height='16' rx='8' fill='%23000'/%3E%3Ccircle cx='12' cy='16' r='2.5' fill='%23007AFF'/%3E%3Ccircle cx='20' cy='16' r='2.5' fill='%2334C759'/%3E%3C/svg%3E">
 <style>
-/* ============================================================
-   DESIGN TOKENS — exact from LilyAisland source
-   ============================================================ */
-:root {
-  /* Colors — SwiftUI system colors */
-  --black: #000000;
-  --gray: #8E8E93;
-  --gray2: #98989D;
-  --white: #FFFFFF;
-  --red: #FF3B30;
-  --orange: #FF9500;
-  --yellow: #FFCC00;
-  --green: #34C759;
-  --blue: #007AFF;
-  --indigo: #5856D6;
-  --purple: #AF52DE;
-  --gray03: rgba(142,142,147,0.3);
-  --gray05: rgba(142,142,147,0.5);
-  --white01: rgba(255,255,255,0.1);
-  --white06: rgba(255,255,255,0.06);
-  --white04: rgba(255,255,255,0.04);
-  --bg: #0A0A0A;
-  --surface: #1A1A1E;
-  --surface2: #1E1E22;
-  --border: rgba(255,255,255,0.07);
-
-  /* Dimensions — exact from IslandState */
-  --collapsed-w: 180px; --collapsed-h: 32px;
-  --collapsed-media-w: 260px; --collapsed-media-h: 34px;
-  --hovered-w: 203px; --hovered-h: 36px;
-  --hovered-media-w: 268px; --hovered-media-h: 38px;
-  --expanded-w: 500px; --expanded-media-h: 200px; --expanded-nomedia-h: 130px;
-  --hud-w: 360px; --hud-h: 34px;
-  --notch-radius: 7px;
-
-  /* Animations — exact spring parameters */
-  --spring-mode: cubic-bezier(0.25, 0.0, 0.25, 1.0);   /* response 0.4, damping 1.0 */
-  --spring-hover: cubic-bezier(0.37, 0.0, 0.21, 1.0);   /* response 0.32, damping 1.0 */
-  --spring-tap: cubic-bezier(0.34, 0.0, 0.09, 1.0);     /* response 0.4, damping 0.75 */
-  --spring-bar: cubic-bezier(0.4, 0.0, 0.1, 1.0);       /* response 0.3, damping 0.7 */
+/* ===== TOKENS — exact from source ===== */
+:root{
+  --black:#000;--gray:#8E8E93;--white:#FFF;--red:#FF3B30;--orange:#FF9500;--yellow:#FFCC00;--green:#34C759;--blue:#007AFF;--indigo:#5856D6;--purple:#AF52DE;
+  --gray03:rgba(142,142,147,.3);--white01:rgba(255,255,255,.1);
+  --bg:#0A0A0A;--surface:#1A1A1E;--surface2:#1E1E22;--border:rgba(255,255,255,.07);
+  /* Island dimensions — from IslandState */
+  --w0:180px;--h0:32px;--w0m:260px;--h0m:34px;--w1:203px;--h1:36px;--w1m:268px;--h1m:38px;
+  --we:500px;--he:200px;--he2:130px;--wh:360px;--hh:34px;--ih:12px;
+  /* Animations */
+  --sp-mode:cubic-bezier(.25,0,.25,1);--sp-hover:cubic-bezier(.32,0,.18,1);--sp-bar:cubic-bezier(.4,0,.1,1);
 }
-
-/* ============================================================
-   RESET & BASE
-   ============================================================ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;font-size:16px}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;background:var(--bg);color:var(--white);line-height:1.5;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-a{color:var(--blue);text-decoration:none;transition:color .2s}
-a:hover{opacity:.85}
+a{color:var(--blue);text-decoration:none;transition:color .2s}a:hover{opacity:.85}
 .container{max-width:1120px;margin:0 auto;padding:0 24px}
 
-/* ============================================================
-   NAV
-   ============================================================ */
+/* ===== NAV ===== */
 .nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,10,.85);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
 .nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.1rem}
-.nav-icon{width:28px;height:28px;border-radius:7px;background:var(--black);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;gap:3px}
-.nav-icon i{width:4px;height:4px;border-radius:50%;display:block}
-.nav-icon i.c{background:var(--blue)}.nav-icon i.m{background:var(--green)}
+.nav-dots{width:28px;height:28px;border-radius:7px;background:var(--black);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;gap:3px}
+.nav-dots i{width:4px;height:4px;border-radius:50%;display:block}.nav-dots i.c{background:var(--blue)}.nav-dots i.m{background:var(--green)}
 .nav-links{display:flex;align-items:center;gap:2px}
 .nav-links a,.nav-links button{color:var(--gray);padding:6px 14px;border-radius:8px;font-size:.85rem;transition:all .2s;border:none;background:none;cursor:pointer;font-family:inherit}
-.nav-links a:hover,.nav-links button:hover{color:var(--white);background:var(--white06)}
+.nav-links a:hover,.nav-links button:hover{color:var(--white);background:rgba(255,255,255,.06)}
 .nav-links a.gh{background:var(--blue);color:var(--white);font-weight:600;padding:7px 16px;border-radius:8px}
 .nav-links a.gh:hover{opacity:.9;color:var(--white)}
-.lang-sw{display:flex;background:var(--white06);border-radius:8px;padding:2px;margin-left:6px}
+.lang-sw{display:flex;background:rgba(255,255,255,.06);border-radius:8px;padding:2px;margin-left:6px}
 .lang-sw button{padding:5px 12px;border:none;background:none;color:var(--gray);cursor:pointer;font-size:.8rem;font-weight:500;transition:all .2s;border-radius:6px;font-family:inherit}
 .lang-sw button.on{background:rgba(255,255,255,.12);color:var(--white)}
 
-/* ============================================================
-   HERO
-   ============================================================ */
+/* ===== HERO ===== */
 .hero{padding:120px 0 80px;text-align:center}
 .hero h1{font-size:3.6rem;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:16px}
-.hero h1 span{background:linear-gradient(180deg,var(--white) 0%,var(--gray) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero h1 span{background:linear-gradient(180deg,var(--white),var(--gray));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .hero .sub{font-size:1.2rem;color:var(--gray);max-width:620px;margin:0 auto 36px;line-height:1.7}
 .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 .btn{padding:12px 28px;border-radius:10px;font-weight:600;font-size:.95rem;cursor:pointer;transition:all .25s;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:8px}
 .btn-p{background:var(--blue);color:var(--white);font-size:1rem;padding:14px 32px;box-shadow:0 4px 20px rgba(0,122,255,.2)}
 .btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,122,255,.3)}
-.btn-o{background:var(--white06);color:#E4E4E7;border:1px solid rgba(255,255,255,.12)}
+.btn-o{background:rgba(255,255,255,.06);color:#E4E4E7;border:1px solid rgba(255,255,255,.12)}
 .btn-o:hover{background:rgba(255,255,255,.1)}
 
-/* ============================================================
-   DEMO SECTION
-   ============================================================ */
-.demo-sec{padding:20px 0 60px}
+/* ===== ISLAND DEMO ===== */
+.sec{padding:80px 0}
+.sec-head{text-align:center;margin-bottom:56px}
+.sec-head h2{font-size:2.4rem;font-weight:700;letter-spacing:-.02em;margin-bottom:10px}
+.sec-head .sub{font-size:1.05rem;color:var(--gray);max-width:560px;margin:0 auto}
 .mac{max-width:900px;margin:0 auto;background:var(--surface);border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .mac-top{height:36px;background:var(--surface2);display:flex;align-items:center;padding:0 16px;gap:8px;border-bottom:1px solid rgba(255,255,255,.05)}
 .mac-dot{width:11px;height:11px;border-radius:50%}
 .mac-dot.r{background:#FF5F57}.mac-dot.y{background:#FEBC2E}.mac-dot.g{background:#28C840}
-.mac-screen{position:relative;height:420px;background:radial-gradient(ellipse at 50% 0%,rgba(0,122,255,.05) 0%,transparent 50%),linear-gradient(180deg,#12121A 0%,#0D0D14 100%);display:flex;flex-direction:column;align-items:center;overflow:hidden}
-.mac-screen .wallpaper{position:absolute;bottom:20px;font-size:.72rem;color:rgba(255,255,255,.08);pointer-events:none}
+.mac-screen{position:relative;height:440px;background:radial-gradient(ellipse at 50% 0%,rgba(0,122,255,.04) 0%,transparent 50%),linear-gradient(180deg,#12121A 0%,#0D0D14 100%);display:flex;flex-direction:column;align-items:center;overflow:hidden}
+.mac-screen .wp{position:absolute;bottom:20px;font-size:.72rem;color:rgba(255,255,255,.08);pointer-events:none}
 
-/* ---- Island wrapper ---- */
-.island-stage{position:relative;margin-top:8px;z-index:10;display:flex;flex-direction:column;align-items:center}
+/* Island wrapper — includes invisible hitbox, matches source .contentShape + outer frame */
+.island-wrapper{position:relative;margin-top:8px;z-index:10;display:flex;flex-direction:column;align-items:center;cursor:default}
+/* Invisible hitbox — matches source lines 399-401 */
+.island-hitbox{position:absolute;bottom:calc(-1*var(--ih));left:0;width:100%;height:var(--ih);z-index:20}
 
-/* Notch flare — SVG-based, matches source bezier curve */
-.notch-flare{position:absolute;top:0;width:calc(var(--expanded-w) + 2px);height:var(--notch-radius);z-index:3;pointer-events:none;display:flex;justify-content:space-between;left:50%;transform:translateX(-50%)}
-.notch-flare svg{display:block;width:var(--notch-radius);height:var(--notch-radius)}
-.island-stage.collapsed .notch-flare{opacity:0}
-.island-stage.hovered .notch-flare,
-.island-stage.hud .notch-flare{width:calc(var(--hud-w) + 2px)}
-.island-stage.media-collapsed .notch-flare{width:calc(var(--collapsed-media-w) + 2px)}
-.island-stage.media-hovered .notch-flare{width:calc(var(--hovered-media-w) + 2px)}
-.island-stage.expanded .notch-flare{width:calc(var(--expanded-w) + 2px)}
+/* Notch flare — matches HardwareNotchFlare */
+.flare-row{position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:3;pointer-events:none;display:flex;justify-content:space-between;opacity:0;transition:opacity .3s}
+.flare-row.on{opacity:1}
+.flare-row svg{display:block;width:7px;height:7px}
 
-/* ---- ISLAND pill ---- */
-.island{position:relative;z-index:2;background:var(--black);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:width .45s var(--spring-mode),height .45s var(--spring-mode),border-radius .45s var(--spring-mode);box-shadow:0 8px 40px rgba(0,0,0,.5);overflow:visible}
-/* default = collapsed no media */
-.island{width:var(--collapsed-w);height:var(--collapsed-h);border-radius:calc(var(--collapsed-h)/2)}
+/* THE ISLAND — pure black pill */
+.island{position:relative;z-index:2;background:var(--black);border:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:width .45s var(--sp-mode),height .45s var(--sp-mode),border-radius .45s var(--sp-mode);box-shadow:0 6px 30px rgba(0,0,0,.5);overflow:hidden}
+/* Collapsed default */
+.island.w0{width:var(--w0);height:var(--h0);border-radius:calc(var(--h0)/2)}
+/* Hovered */
+.island.w1{width:var(--w1);height:var(--h1);border-radius:calc(var(--h1)/2)}
+/* Expanded */
+.island.we{width:var(--we);border-radius:32px;cursor:default}
+.island.we.media{height:var(--he)}.island.we.system{height:var(--he2)}
+/* HUD */
+.island.wh{width:var(--wh);height:var(--hh);border-radius:calc(var(--hh)/2)}
 
-/* Border line — separate element so it animates with the island */
-.island::after{content:'';position:absolute;inset:0;border-radius:inherit;border:1px solid rgba(255,255,255,.08);pointer-events:none;z-index:10}
+/* Island body */
+.island-body{position:relative;z-index:5;width:100%;height:100%;display:flex;align-items:center;justify-content:center}
 
-/* ---- Island content area ---- */
-.island-body{position:relative;z-index:5;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:0 14px}
+/* Dots — matches source lines 367-371 */
+.dots-row{display:flex;gap:12px;align-items:center}
+.dot{width:8px;height:8px;border-radius:50%;transition:background .5s}
+.dot.cpu-n{background:var(--blue)}.dot.cpu-w{background:var(--yellow)}.dot.cpu-c{background:var(--red)}
+.dot.mem-n{background:var(--green)}.dot.mem-w{background:var(--yellow)}.dot.mem-c{background:var(--red)}
 
-/* ---- Dots (collapsed no media) ---- */
-.island-dots{display:flex;gap:10px;align-items:center}
-.island-dot{width:7px;height:7px;border-radius:50%;transition:background .5s}
-.island-dot.cpu-normal{background:var(--blue)}
-.island-dot.cpu-warn{background:var(--yellow)}
-.island-dot.cpu-crit{background:var(--red)}
-.island-dot.mem-normal{background:var(--green)}
-.island-dot.mem-warn{background:var(--yellow)}
-.island-dot.mem-crit{background:var(--red)}
+/* ===== EXPANDED PANELS ===== */
+.exp-system{display:none;width:100%;height:100%;padding:24px 32px;flex-direction:column;gap:12px}
+.exp-system .r1{display:flex;align-items:center;gap:10px}
+.exp-system .r1 .pwr{font-size:.85rem;font-weight:700;color:var(--white)}
+.exp-system .r1 .pct{font-size:1rem;font-weight:600;color:var(--white);margin-left:auto;font-variant-numeric:tabular-nums}
+.exp-system .r1 .pct.chg{color:var(--green)}
+.exp-system .r2{display:flex;gap:18px}
+.exp-system .col{display:flex;flex-direction:column;gap:2px}
+.exp-system .col .lbl{font-size:.65rem;color:var(--gray)}
+.exp-system .col .val{font-size:.85rem;font-weight:500;color:var(--white);font-family:'SF Mono',Monaco,monospace}
+.exp-system .col .sub{font-size:.62rem;color:var(--gray);font-family:'SF Mono',Monaco,monospace}
 
-/* ---- Labels (hovered no media) ---- */
-.island-labels{display:flex;gap:8px;align-items:center}
-.island-label{font-size:.7rem;color:var(--gray);font-weight:500;white-space:nowrap;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif}
+.exp-media{display:none;width:100%;height:100%;padding:30px 32px 24px;flex-direction:column;gap:16px}
+.exp-media .mr1{display:flex;align-items:center;gap:16px}
+.exp-media .art{width:64px;height:64px;border-radius:14px;background:linear-gradient(135deg,rgba(175,82,222,.8),rgba(0,122,255,.6));display:flex;align-items:center;justify-content:center;font-size:1.5rem;box-shadow:0 4px 16px rgba(0,0,0,.4);flex-shrink:0}
+.exp-media .info{flex:1;display:flex;flex-direction:column;gap:4px}
+.exp-media .song{font-size:1.1rem;font-weight:700;line-height:1.2}
+.exp-media .artist{font-size:.95rem;color:var(--gray)}
+.exp-media .eq{display:flex;gap:2px;align-items:flex-end;height:20px}
+.exp-media .eq-bar{width:3px;background:var(--purple);border-radius:2px;animation:eqb ease-in-out infinite}
+.exp-media .eq-bar:nth-child(1){animation-duration:.4s;height:10px}.exp-media .eq-bar:nth-child(2){animation-duration:.3s;height:16px}
+.exp-media .eq-bar:nth-child(3){animation-duration:.5s;height:8px}.exp-media .eq-bar:nth-child(4){animation-duration:.35s;height:14px}
+@keyframes eqb{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
+.exp-media .mr2{display:flex;align-items:center;gap:10px}
+.exp-media .time{font-size:.75rem;color:var(--gray);font-family:'SF Mono',Monaco,monospace;width:35px;text-align:right}
+.exp-media .time.end{text-align:left;width:40px}
+.exp-media .ptrack{flex:1;height:5px;background:var(--gray03);border-radius:3px;overflow:hidden}
+.exp-media .pfill{height:100%;background:var(--white);border-radius:3px;transition:width .1s linear}
+.exp-media .mr3{display:flex;align-items:center;justify-content:center;gap:45px}
+.exp-media .mbtn{background:none;border:none;color:var(--white);cursor:pointer;padding:4px;border-radius:50%;transition:all .15s;font-size:1.1rem;opacity:.85}
+.exp-media .mbtn:hover{opacity:1;background:rgba(255,255,255,.06)}
+.exp-media .mbtn.play{font-size:1.5rem}
+.exp-media .mbtn:active{transform:scale(.85)}
 
-/* ---- HUD content ---- */
+/* ===== HUD CONTENT ===== */
 .hud-icon{flex-shrink:0;margin-right:10px;display:flex;align-items:center;justify-content:center}
-.hud-icon svg{width:18px;height:18px;fill:var(--white)}
-.hud-track{flex:1;height:4px;background:var(--gray03);border-radius:2px;max-width:200px;overflow:hidden}
-.hud-fill{height:100%;background:var(--white);border-radius:2px;transition:width .3s var(--spring-bar)}
-.hud-fill.bri{background:var(--white)}
+.hud-icon svg{width:20px;height:20px}
+.hud-track{flex:1;height:5px;background:var(--gray03);border-radius:3px;max-width:200px;overflow:hidden}
+.hud-fill{height:100%;background:var(--white);border-radius:3px;transition:width .3s var(--sp-bar)}
 .hud-pct{font-size:.78rem;color:var(--gray);margin-left:10px;min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
-.hud-label{font-size:.8rem;color:var(--gray);margin-left:8px;font-weight:500}
-.hud-label.indigo{color:var(--white);background:var(--indigo);padding:2px 12px;border-radius:10px;font-size:.75rem;font-weight:700}
-.hud-label.off{color:var(--gray);background:rgba(255,255,255,.1);padding:2px 12px;border-radius:10px;font-size:.75rem;font-weight:700}
+.hud-lbl{font-size:.8rem;color:var(--gray);margin-left:8px;font-weight:500}
+.hud-lbl.on{color:var(--white);background:var(--indigo);padding:2px 12px;border-radius:10px;font-size:.75rem;font-weight:700}
+.hud-lbl.off{color:var(--gray);background:var(--white01);padding:2px 12px;border-radius:10px;font-size:.75rem;font-weight:700}
 
-/* ---- Expanded dashboard (no media) ---- */
-.exp-panel{display:none;width:100%;height:100%;padding:22px 32px;flex-direction:column;gap:12px}
-.exp-panel .row1{display:flex;align-items:center;gap:10px}
-.exp-panel .row1 .bat-icon{margin-right:4px}
-.exp-panel .row1 .pwr-text{font-size:.85rem;font-weight:700;color:var(--gray)}
-.exp-panel .row1 .pct-text{font-size:1rem;font-weight:600;color:var(--white);margin-left:auto;font-variant-numeric:tabular-nums}
-.exp-panel .row1 .pct-text.charging{color:var(--green)}
-.exp-panel .row2{display:flex;gap:18px}
-.exp-panel .stat-col{display:flex;flex-direction:column;gap:2px}
-.exp-panel .stat-label{font-size:.65rem;color:var(--gray);font-weight:500}
-.exp-panel .stat-val{font-size:.8rem;font-weight:500;color:var(--white);font-variant-numeric:tabular-nums}
-.exp-panel .stat-sub{font-size:.65rem;color:var(--gray);font-variant-numeric:tabular-nums}
-.exp-panel .bt-col{flex:1;display:flex;flex-direction:column;gap:2px}
-
-/* ---- Media player expanded ---- */
-.media-exp{display:none;width:100%;height:100%;padding:32px 32px 24px;flex-direction:column;gap:16px}
-.media-exp .m-row1{display:flex;align-items:center;gap:16px}
-.media-exp .art{width:64px;height:64px;border-radius:14px;background:linear-gradient(135deg,rgba(175,82,222,.8),rgba(0,122,255,.6));display:flex;align-items:center;justify-content:center;color:var(--white);font-size:1.6rem;box-shadow:0 4px 16px rgba(0,0,0,.4);flex-shrink:0}
-.media-exp .track-info{flex:1;display:flex;flex-direction:column;gap:4px}
-.media-exp .song{font-size:1.1rem;font-weight:700;color:var(--white)}
-.media-exp .artist{font-size:.95rem;color:var(--gray)}
-.media-exp .eq-bars{display:flex;gap:2px;align-items:flex-end;height:24px}
-.media-exp .eq-bar{width:3px;background:var(--purple);border-radius:2px;animation:eq-bounce ease-in-out infinite}
-.media-exp .eq-bar:nth-child(1){animation-duration:.4s;height:10px}
-.media-exp .eq-bar:nth-child(2){animation-duration:.3s;height:16px}
-.media-exp .eq-bar:nth-child(3){animation-duration:.5s;height:8px}
-.media-exp .eq-bar:nth-child(4){animation-duration:.35s;height:14px}
-@keyframes eq-bounce{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
-.media-exp .m-row2{display:flex;align-items:center;gap:10px}
-.media-exp .time{font-size:.75rem;color:var(--gray);font-variant-numeric:tabular-nums;width:34px;text-align:right}
-.media-exp .time.end{text-align:left;width:38px}
-.media-exp .prog-track{flex:1;height:5px;background:var(--gray03);border-radius:3px;overflow:hidden}
-.media-exp .prog-fill{height:100%;background:var(--white);border-radius:3px;width:45%;transition:width .1s linear}
-.media-exp .m-row3{display:flex;align-items:center;justify-content:center;gap:42px}
-.media-exp .ctrl-btn{background:none;border:none;color:var(--white);cursor:pointer;padding:4px;border-radius:50%;transition:all .15s;font-size:1.1rem;opacity:.85}
-.media-exp .ctrl-btn:hover{opacity:1;background:rgba(255,255,255,.06)}
-.media-exp .ctrl-btn.play-btn{font-size:1.5rem}
-.media-exp .ctrl-btn:active{transform:scale(.85)}
-
-/* Collapsed media */
-.media-collapsed{display:flex;align-items:center;gap:8px;padding:0 14px;width:100%}
-.media-collapsed .art-sm{width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,rgba(175,82,222,.8),rgba(0,122,255,.6));flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--white);font-size:.55rem}
-.media-collapsed .eq-bars-sm{display:flex;gap:1.5px;align-items:flex-end;height:12px;margin-left:auto}
-.media-collapsed .eq-bar-sm{width:2.5px;background:var(--purple);border-radius:1.5px;animation:eq-bounce-sm ease-in-out infinite}
-.media-collapsed .eq-bar-sm:nth-child(1){animation-duration:.4s;height:2px}
-.media-collapsed .eq-bar-sm:nth-child(2){animation-duration:.3s;height:4px}
-.media-collapsed .eq-bar-sm:nth-child(3){animation-duration:.5s;height:2px}
-.media-collapsed .eq-bar-sm:nth-child(4){animation-duration:.35s;height:4px}
-@keyframes eq-bounce-sm{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
-
-/* ============================================================
-   DEMO CONTROLS
-   ============================================================ */
-.ctrl-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:20px;max-width:900px;margin:0 auto}
+/* ===== DEMO CONTROLS ===== */
+.ctrl-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:18px;max-width:900px;margin:0 auto}
 .ctrl-btn{padding:7px 15px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:var(--gray);cursor:pointer;font-size:.8rem;font-weight:500;transition:all .2s;font-family:inherit}
 .ctrl-btn:hover{border-color:rgba(255,255,255,.18);color:var(--white);background:rgba(255,255,255,.05)}
 .ctrl-btn.act{background:rgba(0,122,255,.12);border-color:rgba(0,122,255,.25);color:var(--blue)}
-.ctrl-hint{text-align:center;font-size:.75rem;color:rgba(255,255,255,.2);margin-top:4px}
+.ctrl-hint{text-align:center;font-size:.75rem;color:rgba(255,255,255,.18);margin-top:2px}
 
-/* ============================================================
-   FEATURES
-   ============================================================ */
-.sec{padding:80px 0}
-.sec-head{text-align:center;margin-bottom:56px}
-.sec-head h2{font-size:2.4rem;font-weight:700;letter-spacing:-.02em;color:var(--white);margin-bottom:10px}
-.sec-head .sub{font-size:1.05rem;color:var(--gray);max-width:560px;margin:0 auto}
+/* ===== FEATURE CARDS ===== */
 .feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:18px}
 .feat-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:24px;transition:all .3s;cursor:pointer}
 .feat-card:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
 .feat-card:active{transform:scale(.98)}
-.feat-card h3{font-size:1.05rem;font-weight:700;color:var(--white);margin-bottom:6px}
+.feat-card h3{font-size:1.05rem;font-weight:700;margin-bottom:6px}
 .feat-card .desc{font-size:.84rem;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:14px}
-.feat-demo{padding:14px;background:rgba(0,0,0,.2);border-radius:10px;border:1px solid rgba(255,255,255,.03);min-height:44px;display:flex;align-items:center;gap:10px;transition:all .3s}
-.feat-demo.flash{background:rgba(0,122,255,.06);border-color:rgba(0,122,255,.1)}
+/* Mini island replica in feature card */
+.feat-mini{background:var(--black);border:1px solid rgba(255,255,255,.08);border-radius:18px;min-height:44px;padding:8px 18px;display:flex;align-items:center;gap:8px;transition:all .3s;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.feat-mini.flash{box-shadow:0 0 0 2px rgba(0,122,255,.15)}
+
+/* Mini controls inside feat-mini */
+.f-btn{padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--gray);cursor:pointer;font-size:.76rem;transition:all .15s;font-family:inherit;white-space:nowrap;flex-shrink:0}
+.f-btn:hover{background:rgba(255,255,255,.08);color:var(--white)}.f-btn:active{transform:scale(.95)}
 .f-toggle{width:42px;height:24px;border-radius:12px;background:rgba(255,255,255,.15);cursor:pointer;position:relative;transition:background .3s;flex-shrink:0}
 .f-toggle.on{background:var(--green)}
 .f-toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--white);transition:transform .3s}
 .f-toggle.on::after{transform:translateX(18px)}
-.f-btn{padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--gray);cursor:pointer;font-size:.76rem;transition:all .15s;font-family:inherit;white-space:nowrap}
-.f-btn:hover{background:rgba(255,255,255,.08);color:var(--white)}
-.f-btn:active{transform:scale(.95)}
-.f-slider{width:100px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;cursor:pointer;flex-shrink:0;overflow:hidden}
-.f-slider-fill{height:100%;border-radius:2px;transition:width .3s var(--spring-bar)}
-.f-slider-fill.vol{background:var(--white)}.f-slider-fill.bri{background:var(--white)}
-.f-row{display:flex;align-items:center;gap:8px;flex:1}
+.f-slider{flex:1;height:4px;background:var(--gray03);border-radius:2px;cursor:pointer;overflow:hidden;max-width:120px}
+.f-slider-fill{height:100%;background:var(--white);border-radius:2px;transition:width .3s var(--sp-bar)}
+.mini-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .5s}
+.mini-dot.cpu-n{background:var(--blue)}.mini-dot.cpu-w{background:var(--yellow)}.mini-dot.cpu-c{background:var(--red)}
+.mini-dot.mem-n{background:var(--green)}.mini-dot.mem-w{background:var(--yellow)}.mini-dot.mem-c{background:var(--red)}
 
-/* ============================================================
-   SETTINGS
-   ============================================================ */
+/* ===== SETTINGS ===== */
 .set-demo{max-width:700px;margin:0 auto;background:var(--surface);border-radius:14px;border:1px solid var(--border);overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.4)}
 .set-top{background:var(--surface2);padding:12px 18px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.75rem;color:rgba(255,255,255,.3)}
 .set-body{display:flex;min-height:280px}
 .set-side{width:155px;background:rgba(0,0,0,.15);border-right:1px solid rgba(255,255,255,.04);padding:6px;flex-shrink:0}
-.set-side-item{padding:9px 12px;border-radius:7px;cursor:pointer;font-size:.8rem;color:rgba(255,255,255,.4);transition:all .15s;margin-bottom:1px;user-select:none}
-.set-side-item:hover{color:rgba(255,255,255,.65);background:rgba(255,255,255,.03)}
-.set-side-item.sel{color:var(--white);background:rgba(0,122,255,.1)}
+.set-item{padding:9px 12px;border-radius:7px;cursor:pointer;font-size:.8rem;color:rgba(255,255,255,.4);transition:all .15s;margin-bottom:1px;user-select:none}
+.set-item:hover{color:rgba(255,255,255,.65);background:rgba(255,255,255,.03)}
+.set-item.sel{color:var(--white);background:rgba(0,122,255,.1)}
 .set-main{padding:18px 22px;flex:1}
 .set-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.03)}
 .set-row:last-child{border-bottom:none}
@@ -254,10 +184,8 @@ a:hover{opacity:.85}
 .set-slider{-webkit-appearance:none;width:110px;height:4px;border-radius:2px;background:rgba(255,255,255,.12);outline:none}
 .set-slider::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--blue);cursor:pointer}
 
-/* ============================================================
-   INSTALL
-   ============================================================ */
-.inst{background:rgba(255,255,255,.015);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04);padding:80px 0}
+/* ===== INSTALL ===== */
+.inst{background:rgba(255,255,255,.015);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04)}
 .inst-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:32px}
 .inst-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:28px}
 .inst-card h3{font-size:1.1rem;color:var(--white);margin-bottom:16px}
@@ -266,69 +194,49 @@ a:hover{opacity:.85}
 .inst-steps li{counter-increment:s;padding:9px 0 9px 34px;position:relative;font-size:.88rem;color:rgba(255,255,255,.55)}
 .inst-steps li::before{content:counter(s);position:absolute;left:0;top:9px;width:21px;height:21px;border-radius:50%;background:rgba(0,122,255,.12);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center}
 
-/* ============================================================
-   FOOTER
-   ============================================================ */
+/* ===== FOOTER ===== */
 .ftr{padding:36px 0;text-align:center;border-top:1px solid rgba(255,255,255,.04)}
 .ftr-links{display:flex;gap:22px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
-.ftr-links a{font-size:.82rem;color:rgba(255,255,255,.35)}
-.ftr-links a:hover{color:rgba(255,255,255,.6)}
+.ftr-links a{font-size:.82rem;color:rgba(255,255,255,.35)}.ftr-links a:hover{color:rgba(255,255,255,.6)}
 .ftr-copy{font-size:.75rem;color:rgba(255,255,255,.2)}
 
-/* ============================================================
-   TOAST
-   ============================================================ */
+/* ===== TOAST ===== */
 .toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(100px);background:rgba(60,60,67,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:var(--white);padding:9px 22px;border-radius:20px;font-size:.82rem;font-weight:500;z-index:9999;transition:transform .4s cubic-bezier(.16,1,.3,1);pointer-events:none;border:1px solid rgba(255,255,255,.08)}
 .toast.in{transform:translateX(-50%) translateY(0)}
 
-/* ============================================================
-   SCROLL REVEAL
-   ============================================================ */
 .sr{opacity:0;transform:translateY(30px);transition:all .7s ease-out}
 .sr.seen{opacity:1;transform:translateY(0)}
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
+/* ===== RESPONSIVE ===== */
 @media(max-width:768px){
-  .hero h1{font-size:2rem}.hero .sub{font-size:.95rem}
-  .nav-links a.hide-m{display:none}
-  .mac-screen{height:340px}
-  .island{width:150px!important;height:30px!important}
-  .island-stage.expanded .island{width:calc(100vw - 48px)!important;min-height:170px!important;height:auto!important}
-  .island-stage.hud .island{width:260px!important}
-  .feat-grid{grid-template-columns:1fr}
-  .inst-grid{grid-template-columns:1fr}
-  .set-body{flex-direction:column}.set-side{width:100%;display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,.04);flex-direction:row}.set-side-item{white-space:nowrap}
-  .ctrl-bar{gap:5px}.ctrl-btn{font-size:.75rem;padding:6px 10px}
+  .hero h1{font-size:2rem}.hero .sub{font-size:.95rem}.nav-links a.hm{display:none}
+  .mac-screen{height:360px}
+  .island.w0{width:150px!important;height:30px!important}.island.w1{width:170px!important;height:34px!important}
+  .island.we{width:calc(100vw - 48px)!important;height:auto!important;min-height:160px!important}
+  .island.wh{width:260px!important}
+  .feat-grid{grid-template-columns:1fr}.inst-grid{grid-template-columns:1fr}
+  .set-body{flex-direction:column}.set-side{width:100%;display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,.04);flex-direction:row}
+  .set-item{white-space:nowrap}.ctrl-bar{gap:5px}.ctrl-btn{font-size:.75rem;padding:6px 10px}
 }
-@media(max-width:480px){
-  .hero h1{font-size:1.7rem}.hero-btns{flex-direction:column;align-items:center}
-}
+@media(max-width:480px){.hero h1{font-size:1.7rem}.hero-btns{flex-direction:column;align-items:center}}
 </style>
 </head>
 <body>
 
-<!-- ===== NAV ===== -->
+<!-- NAV -->
 <nav class="nav">
-  <div class="nav-brand">
-    <div class="nav-icon"><i class="c"></i><i class="m"></i></div>
-    <span>LilyAisland</span>
-  </div>
+  <div class="nav-brand"><div class="nav-dots"><i class="c"></i><i class="m"></i></div><span>LilyAisland</span></div>
   <div class="nav-links">
-    <a href="#demo" class="hide-m" data-i18n="nav.demo">演示</a>
-    <a href="#features" class="hide-m" data-i18n="nav.features">功能</a>
-    <a href="#settings" class="hide-m" data-i18n="nav.settings">设置</a>
-    <a href="#install" class="hide-m" data-i18n="nav.install">安装</a>
+    <a href="#demo" class="hm" data-i18n="nav.demo">演示</a>
+    <a href="#features" class="hm" data-i18n="nav.features">功能</a>
+    <a href="#settings" class="hm" data-i18n="nav.settings">设置</a>
+    <a href="#install" class="hm" data-i18n="nav.install">安装</a>
     <a href="https://github.com/CHOWLAN233/LilyAisland" target="_blank" rel="noopener" class="gh">GitHub</a>
-    <div class="lang-sw">
-      <button id="btnZh" class="on" data-lang="zh">中</button>
-      <button id="btnEn" data-lang="en">EN</button>
-    </div>
+    <div class="lang-sw"><button id="btnZh" class="on" data-lang="zh">中</button><button id="btnEn" data-lang="en">EN</button></div>
   </div>
 </nav>
 
-<!-- ===== HERO ===== -->
+<!-- HERO -->
 <header class="hero">
   <h1><span>LilyAisland</span></h1>
   <p class="sub" data-i18n="hero.sub">将 iPhone 灵动岛体验带到 Mac — 悬浮在屏幕顶部的交互式胶囊控件，集系统监控、媒体控制、快捷操作为一体。</p>
@@ -339,145 +247,129 @@ a:hover{opacity:.85}
   </div>
 </header>
 
-<!-- ===== DEMO ===== -->
-<section class="demo-sec" id="demo">
-  <div class="sec-head">
-    <h2 data-i18n="demo.title">交互式演示</h2>
-    <p class="sub" data-i18n="demo.sub">悬停或点击灵动岛，体验每种交互模式 — 与真实应用完全一致</p>
-  </div>
-
+<!-- DEMO -->
+<section class="sec" id="demo" style="padding-top:20px">
+  <div class="sec-head"><h2 data-i18n="demo.title">交互式演示</h2><p class="sub" data-i18n="demo.sub">悬停或点击灵动岛，与真实应用完全一致的交互体验</p></div>
   <div class="mac">
     <div class="mac-top"><div class="mac-dot r"></div><div class="mac-dot y"></div><div class="mac-dot g"></div></div>
-    <div class="mac-screen" id="macScreen">
-      <!-- Island stage -->
-      <div class="island-stage collapsed" id="stage">
-        <!-- Notch flare -->
-        <div class="notch-flare" id="notchFlare">
+    <div class="mac-screen">
+      <!-- Island wrapper = outer frame + contentShape + invisible hitbox, matches source lines 387-420 -->
+      <div class="island-wrapper" id="wrap">
+        <div class="flare-row" id="flareRow">
           <svg viewBox="0 0 7 7"><path d="M0,0 L7,0 L7,7 C7,3.15 4.85,0 0,0 Z" fill="#0D0D14"/></svg>
           <svg viewBox="0 0 7 7" style="transform:scaleX(-1)"><path d="M0,0 L7,0 L7,7 C7,3.15 4.85,0 0,0 Z" fill="#0D0D14"/></svg>
         </div>
-        <!-- Island pill -->
-        <div class="island" id="island">
-          <div class="island-body" id="islandBody">
-            <!-- Content rendered by JS -->
-          </div>
-        </div>
+        <div class="island w0" id="island"><div class="island-body" id="islandBody"></div></div>
+        <div class="island-hitbox"></div>
       </div>
-      <div class="wallpaper" data-i18n="demo.bg">macOS 桌面</div>
+      <div class="wp" data-i18n="demo.bg">macOS 桌面</div>
     </div>
   </div>
-
   <div class="ctrl-bar" id="ctrlBar">
-    <button class="ctrl-btn act" data-mode="collapsed" data-i18n="ctrl.collapsed">折叠</button>
-    <button class="ctrl-btn" data-mode="expanded" data-i18n="ctrl.expanded">展开仪表盘</button>
-    <button class="ctrl-btn" data-mode="volume" data-i18n="ctrl.volume">音量</button>
-    <button class="ctrl-btn" data-mode="brightness" data-i18n="ctrl.brightness">亮度</button>
-    <button class="ctrl-btn" data-mode="dnd" data-i18n="ctrl.dnd">专注</button>
-    <button class="ctrl-btn" data-mode="battery" data-i18n="ctrl.battery">电池</button>
-    <button class="ctrl-btn" data-mode="connectivity" data-i18n="ctrl.connectivity">蓝牙</button>
-    <button class="ctrl-btn" data-mode="media" data-i18n="ctrl.media">音乐</button>
+    <button class="ctrl-btn act" data-mode="collapsed" data-i18n="ctrl.col">折叠</button>
+    <button class="ctrl-btn" data-mode="expanded" data-i18n="ctrl.exp">展开仪表盘</button>
+    <button class="ctrl-btn" data-mode="volume" data-i18n="ctrl.vol">音量 HUD</button>
+    <button class="ctrl-btn" data-mode="brightness" data-i18n="ctrl.bri">亮度 HUD</button>
+    <button class="ctrl-btn" data-mode="dnd" data-i18n="ctrl.dnd">专注模式</button>
+    <button class="ctrl-btn" data-mode="battery" data-i18n="ctrl.bat">电池</button>
+    <button class="ctrl-btn" data-mode="media" data-i18n="ctrl.med">音乐播放</button>
   </div>
   <p class="ctrl-hint" data-i18n="ctrl.hint">悬停或点击灵动岛，也可使用下方按钮切换模式</p>
 </section>
 
-<!-- ===== FEATURES ===== -->
+<!-- FEATURES -->
 <section class="sec" id="features">
   <div class="container">
-    <div class="sec-head">
-      <h2 data-i18n="feat.title">全部功能</h2>
-      <p class="sub" data-i18n="feat.sub">8 个模块覆盖系统监控、媒体控制和快捷操作</p>
-    </div>
+    <div class="sec-head"><h2 data-i18n="feat.title">全部功能</h2><p class="sub" data-i18n="feat.sub">8 个模块覆盖系统监控、媒体控制和快捷操作</p></div>
     <div class="feat-grid">
 
-      <!-- Now Playing -->
+      <!-- 1. Now Playing — matches collapsed media island -->
       <div class="feat-card" data-feat="media">
-        <h3 data-i18n="feat.m.title">正在播放</h3>
-        <p class="desc" data-i18n="feat.m.desc">Apple Music 曲目信息、专辑封面、播放进度。通过 AppleScript 控制播放/暂停、上一首、下一首。</p>
-        <div class="feat-demo">
-          <div class="art-sm" style="width:36px;height:36px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--white);font-size:.9rem">CD</div>
-          <div style="flex:1"><div style="font-size:.8rem;color:var(--white);font-weight:600">Blinding Lights</div><div style="font-size:.7rem;color:var(--gray)">The Weeknd</div></div>
-          <button class="f-btn" data-act="prev" data-i18n="feat.m.prev">上一首</button>
+        <h3 data-i18n="m.title">正在播放</h3><p class="desc" data-i18n="m.desc">Apple Music 曲目信息、专辑封面、播放进度。通过 AppleScript 控制播放/暂停、上一首、下一首。</p>
+        <div class="feat-mini">
+          <div style="width:24px;height:24px;border-radius:6px;background:var(--purple);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--white)">N</div>
+          <div style="flex:1;min-width:0"><div style="font-size:.75rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Blinding Lights</div><div style="font-size:.66rem;color:var(--gray)">The Weeknd</div></div>
+          <div style="display:flex;gap:1.5px;align-items:flex-end;height:10px"><div style="width:2.5px;background:var(--purple);border-radius:1.5px;animation:eqb .4s ease-in-out infinite;height:2px"></div><div style="width:2.5px;background:var(--purple);border-radius:1.5px;animation:eqb .3s ease-in-out infinite;height:4px"></div><div style="width:2.5px;background:var(--purple);border-radius:1.5px;animation:eqb .5s ease-in-out infinite;height:2px"></div><div style="width:2.5px;background:var(--purple);border-radius:1.5px;animation:eqb .35s ease-in-out infinite;height:4px"></div></div>
+          <button class="f-btn" data-act="prev" data-i18n="m.prev">上一首</button>
           <button class="f-btn" data-act="play" id="fPlayBtn">播放</button>
-          <button class="f-btn" data-act="next" data-i18n="feat.m.next">下一首</button>
+          <button class="f-btn" data-act="next" data-i18n="m.next">下一首</button>
         </div>
       </div>
 
-      <!-- Volume -->
+      <!-- 2. Volume — matches volume HUD -->
       <div class="feat-card" data-feat="volume">
-        <h3 data-i18n="feat.v.title">音量控制</h3>
-        <p class="desc" data-i18n="feat.v.desc">通过 CGEventTap 拦截系统音量键，用自定义 HUD 替代系统弹窗。零延迟即时响应。</p>
-        <div class="feat-demo">
-          <span style="font-size:.78rem;color:var(--gray)" data-i18n="feat.v.low">低</span>
-          <div class="f-slider" data-slider="vol"><div class="f-slider-fill vol" style="width:65%"></div></div>
-          <span style="font-size:.8rem;color:var(--white);min-width:34px;font-variant-numeric:tabular-nums" id="fVolPct">65%</span>
-          <input type="range" min="0" max="100" value="65" class="set-slider" style="width:56px" data-range="vol">
+        <h3 data-i18n="v.title">音量控制</h3><p class="desc" data-i18n="v.desc">通过 CGEventTap 拦截系统音量键，用自定义 HUD 替代系统弹窗。零延迟即时响应。</p>
+        <div class="feat-mini">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;fill:var(--white)"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+          <div class="f-slider" data-slider="vol"><div class="f-slider-fill" style="width:65%"></div></div>
+          <span style="font-size:.78rem;color:var(--white);min-width:32px;font-variant-numeric:tabular-nums" id="fVolPct">65%</span>
+          <input type="range" min="0" max="100" value="65" class="set-slider" style="width:48px" data-range="vol">
         </div>
       </div>
 
-      <!-- Brightness -->
+      <!-- 3. Brightness — matches brightness HUD -->
       <div class="feat-card" data-feat="brightness">
-        <h3 data-i18n="feat.br.title">亮度调节</h3>
-        <p class="desc" data-i18n="feat.br.desc">通过 DisplayServices 私有框架实现 60fps 平滑橡皮筋式亮度过渡动画，追赶到目标值。</p>
-        <div class="feat-demo">
-          <span style="color:var(--gray);font-size:.85rem">◐</span>
-          <div class="f-slider" data-slider="bri"><div class="f-slider-fill bri" style="width:80%"></div></div>
-          <span style="color:var(--gray);font-size:.85rem">◉</span>
-          <input type="range" min="0" max="100" value="80" class="set-slider" style="width:56px" data-range="bri">
+        <h3 data-i18n="br.title">亮度调节</h3><p class="desc" data-i18n="br.desc">通过 DisplayServices 私有框架实现 60fps 平滑橡皮筋式亮度过渡动画。</p>
+        <div class="feat-mini">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;fill:var(--white)"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m-10-10h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>
+          <div class="f-slider" data-slider="bri"><div class="f-slider-fill" style="width:80%"></div></div>
+          <span style="font-size:.78rem;color:var(--gray);min-width:32px">80%</span>
+          <input type="range" min="0" max="100" value="80" class="set-slider" style="width:48px" data-range="bri">
         </div>
       </div>
 
-      <!-- Battery -->
+      <!-- 4. Battery — matches battery HUD -->
       <div class="feat-card" data-feat="battery">
-        <h3 data-i18n="feat.bat.title">电池监控</h3>
-        <p class="desc" data-i18n="feat.bat.desc">实时电量、充/放电功率（电压×电流）、适配器功率。通过 IOKit 获取硬件级数据，支持插拔和低电量提醒。</p>
-        <div class="feat-demo">
-          <span style="font-weight:600;color:var(--green);font-variant-numeric:tabular-nums;min-width:36px" id="fBattPct">85%</span>
-          <span style="font-size:.72rem;color:var(--gray)">18.5W</span>
-          <button class="f-btn" data-act="charger" id="fChargerBtn" data-i18n="feat.bat.unplug">拔掉电源</button>
+        <h3 data-i18n="bat.title">电池监控</h3><p class="desc" data-i18n="bat.desc">实时电量、充/放电功率（电压×电流）、适配器功率。通过 IOKit 获取硬件级数据。</p>
+        <div class="feat-mini">
+          <span style="font-weight:600;color:var(--white);margin-right:6px" data-i18n="bat.charging">充电中</span>
+          <span style="font-weight:700;color:var(--green);font-variant-numeric:tabular-nums" id="fBattPct">85%</span>
+          <span style="font-size:.72rem;color:var(--gray);margin-left:6px">18.5W</span>
+          <button class="f-btn" style="margin-left:auto" data-act="charger" id="fChargerBtn" data-i18n="bat.unplug">拔掉电源</button>
         </div>
       </div>
 
-      <!-- DND -->
+      <!-- 5. DND — matches DND HUD -->
       <div class="feat-card" data-feat="dnd">
-        <h3 data-i18n="feat.dnd.title">专注模式</h3>
-        <p class="desc" data-i18n="feat.dnd.desc">通过拦截 F6 / 月亮键切换勿扰模式。自定义指示器叠加层，可选系统 Glass 音效。</p>
-        <div class="feat-demo">
+        <h3 data-i18n="d.title">专注模式</h3><p class="desc" data-i18n="d.desc">通过拦截 F6 / 月亮键切换勿扰模式。自定义指示器，可选 Glass 音效。</p>
+        <div class="feat-mini">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;fill:var(--white)" id="fDndIcon"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
           <div class="f-toggle" data-toggle="dnd"></div>
-          <span style="font-size:.8rem;color:var(--gray)" id="fDndLabel" data-i18n="feat.dnd.off">关</span>
+          <span style="font-size:.8rem;color:var(--gray)" id="fDndLabel" data-i18n="d.off">关</span>
         </div>
       </div>
 
-      <!-- Connectivity -->
+      <!-- 6. Connectivity — matches expanded dashboard indicator (NOT a popup) -->
       <div class="feat-card" data-feat="connectivity">
-        <h3 data-i18n="feat.bt.title">连接设备</h3>
-        <p class="desc" data-i18n="feat.bt.desc">蓝牙设备连接/断开通知。智能识别设备类型：AirPods、耳机、音箱（IOBluetooth）。</p>
-        <div class="feat-demo">
-          <span style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0" id="fBtDot"></span>
+        <h3 data-i18n="c.title">连接设备</h3><p class="desc" data-i18n="c.desc">蓝牙设备连接/断开检测，智能识别设备类型（AirPods、耳机、音箱）。信息展示在展开面板中。</p>
+        <div class="feat-mini">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0" id="fBtIcon"><path d="M12 1a9 9 0 00-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 00-9-9z" fill="#34C759"/></svg>
           <span style="font-size:.8rem;color:var(--gray)" id="fBtLabel">AirPods Pro</span>
-          <button class="f-btn" data-act="btToggle" id="fBtBtn" data-i18n="feat.bt.disc">断开</button>
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--green);margin-left:auto;flex-shrink:0" id="fBtDot"></div>
         </div>
       </div>
 
-      <!-- System Stats -->
+      <!-- 7. System Stats — matches collapsed island dots -->
       <div class="feat-card" data-feat="expanded">
-        <h3 data-i18n="feat.sys.title">系统状态</h3>
-        <p class="desc" data-i18n="feat.sys.desc">通过 AppleSMC 获取 CPU/GPU/内存使用率和温度。Mach API 和 IOKit 硬件级数据。</p>
-        <div class="feat-demo">
-          <div style="display:flex;gap:14px;font-size:.73rem">
-            <div style="text-align:center"><div style="color:var(--blue);font-weight:700" id="fCpu">32%</div><div style="color:var(--gray);font-size:.65rem">CPU</div></div>
-            <div style="text-align:center"><div style="color:var(--green);font-weight:700" id="fGpu">18%</div><div style="color:var(--gray);font-size:.65rem">GPU</div></div>
-            <div style="text-align:center"><div style="color:var(--orange);font-weight:700" id="fMem">45%</div><div style="color:var(--gray);font-size:.65rem">内存</div></div>
-            <div style="text-align:center"><div style="color:var(--red);font-weight:700" id="fTemp">62°</div><div style="color:var(--gray);font-size:.65rem">温度</div></div>
+        <h3 data-i18n="s.title">系统状态</h3><p class="desc" data-i18n="s.desc">通过 AppleSMC 获取 CPU/GPU/内存使用率和温度。Mach API 和 IOKit 硬件级数据。</p>
+        <div class="feat-mini" style="gap:16px">
+          <div style="display:flex;gap:10px;align-items:center">
+            <div class="mini-dot cpu-n" id="fCpuDot"></div><div class="mini-dot mem-n" id="fMemDot"></div>
           </div>
-          <button class="f-btn" data-act="refresh" data-i18n="feat.sys.refresh">刷新</button>
+          <div style="display:flex;gap:14px;font-size:.7rem;flex-wrap:wrap">
+            <span style="color:var(--blue);font-weight:600" id="fCpu">32%</span>
+            <span style="color:var(--green);font-weight:600" id="fGpu">18%</span>
+            <span style="color:var(--orange);font-weight:600" id="fMem">45%</span>
+            <span style="color:var(--red);font-weight:600" id="fTemp">62°</span>
+          </div>
+          <button class="f-btn" style="margin-left:auto" data-act="refresh" data-i18n="s.refresh">刷新</button>
         </div>
       </div>
 
-      <!-- Localization -->
+      <!-- 8. Localization -->
       <div class="feat-card" data-feat="i18n">
-        <h3 data-i18n="feat.lang.title">多语言支持</h3>
-        <p class="desc" data-i18n="feat.lang.desc">完整的中文和 English 本地化（约 110 个字符串键）。设置中即时切换，无需重启应用。</p>
-        <div class="feat-demo">
+        <h3 data-i18n="l.title">多语言支持</h3><p class="desc" data-i18n="l.desc">完整的中文和 English 本地化（约 110 个字符串键）。设置中即时切换，无需重启。</p>
+        <div class="feat-mini" style="justify-content:center;gap:12px">
           <button class="f-btn" style="background:rgba(0,122,255,.12);border-color:rgba(0,122,255,.2);color:var(--blue)" data-act="langZh">中文</button>
           <button class="f-btn" data-act="langEn">English</button>
           <span style="font-size:.78rem;color:var(--gray)" id="fLangNote"></span>
@@ -488,35 +380,26 @@ a:hover{opacity:.85}
   </div>
 </section>
 
-<!-- ===== SETTINGS ===== -->
+<!-- SETTINGS -->
 <section class="sec" id="settings">
   <div class="container">
-    <div class="sec-head">
-      <h2 data-i18n="set.title">设置面板</h2>
-      <p class="sub" data-i18n="set.sub">7 个设置分类，精细控制每个模块的行为</p>
-    </div>
+    <div class="sec-head"><h2 data-i18n="set.title">设置面板</h2><p class="sub" data-i18n="set.sub">7 个设置分类，精细控制每个模块的行为</p></div>
     <div class="set-demo">
       <div class="set-top"><div class="mac-dot r" style="width:9px;height:9px"></div><div class="mac-dot y" style="width:9px;height:9px"></div><div class="mac-dot g" style="width:9px;height:9px"></div><span data-i18n="set.win">设置 — LilyAisland</span></div>
-      <div class="set-body">
-        <div class="set-side" id="setSide"></div>
-        <div class="set-main" id="setMain"></div>
-      </div>
+      <div class="set-body"><div class="set-side" id="setSide"></div><div class="set-main" id="setMain"></div></div>
     </div>
   </div>
 </section>
 
-<!-- ===== INSTALL ===== -->
-<section class="inst" id="install">
+<!-- INSTALL -->
+<section class="sec inst" id="install">
   <div class="container">
-    <div class="sec-head">
-      <h2 data-i18n="inst.title">安装方式</h2>
-      <p class="sub" data-i18n="inst.sub">直接下载或从源码构建</p>
-    </div>
+    <div class="sec-head"><h2 data-i18n="inst.title">安装方式</h2><p class="sub" data-i18n="inst.sub">直接下载或从源码构建</p></div>
     <div class="inst-grid">
       <div class="inst-card">
         <h3 data-i18n="inst.dl">下载安装（推荐）</h3>
         <ol class="inst-steps">
-          <li data-i18n="inst.s1">前往 <a href="https://github.com/CHOWLAN233/LilyAisland/releases" target="_blank">Releases 页面</a> 下载最新 .zip</li>
+          <li data-i18n="inst.s1">前往 <a href="https://github.com/CHOWLAN233/LilyAisland/releases" target="_blank">Releases</a> 下载最新 .zip</li>
           <li data-i18n="inst.s2">解压并将 LilyAisland.app 拖入「应用程序」文件夹</li>
           <li data-i18n="inst.s3">启动应用，根据提示授予「辅助功能」权限</li>
           <li data-i18n="inst.s4">灵动岛将出现在屏幕顶部中央</li>
@@ -527,13 +410,12 @@ a:hover{opacity:.85}
         <pre>git clone https://github.com/CHOWLAN233/LilyAisland.git
 cd LilyAisland
 open LilyAisland.xcodeproj</pre>
-        <p style="font-size:.78rem;color:rgba(255,255,255,.35);margin-top:10px" data-i18n="inst.note">需要 Xcode 16+，macOS 15.2+。Product → Archive 或使用 xcodebuild 命令行构建。</p>
+        <p style="font-size:.78rem;color:rgba(255,255,255,.35);margin-top:10px" data-i18n="inst.note">需要 Xcode 16+，macOS 15.2+。Product → Archive 或 xcodebuild 命令行构建。</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ===== FOOTER ===== -->
 <footer class="ftr">
   <div class="ftr-links">
     <a href="https://github.com/CHOWLAN233/LilyAisland" target="_blank" rel="noopener">GitHub</a>
@@ -546,692 +428,418 @@ open LilyAisland.xcodeproj</pre>
 
 <div class="toast" id="toast"></div>
 
-<!-- ===============================================================
-     SCRIPTS — event-driven, no inline handlers, complete i18n
-     =============================================================== -->
 <script>
 (function(){
 'use strict';
 
-// ===== I18N — COMPLETE Chinese/English with NO English leakage =====
-var T = {
-  zh: {
-    'nav.demo':'演示','nav.features':'功能','nav.settings':'设置','nav.install':'安装',
-    'hero.sub':'将 iPhone 灵动岛体验带到 Mac — 悬浮在屏幕顶部的交互式胶囊控件，集系统监控、媒体控制、快捷操作为一体。',
-    'hero.demo':'体验演示','hero.dl':'下载应用','hero.src':'查看源码',
-    'demo.title':'交互式演示','demo.sub':'悬停或点击灵动岛，体验每种交互模式 — 与真实应用完全一致',
-    'demo.bg':'macOS 桌面',
-    'ctrl.collapsed':'折叠状态','ctrl.expanded':'展开仪表盘','ctrl.volume':'音量 HUD','ctrl.brightness':'亮度 HUD',
-    'ctrl.dnd':'专注模式','ctrl.battery':'电池提醒','ctrl.connectivity':'蓝牙连接','ctrl.media':'音乐播放',
-    'ctrl.hint':'悬停或点击灵动岛，也可使用下方按钮切换模式',
-    'feat.title':'全部功能','feat.sub':'8 个模块覆盖系统监控、媒体控制和快捷操作',
-    'feat.m.title':'正在播放','feat.m.desc':'Apple Music 曲目信息、专辑封面、播放进度。通过 AppleScript 控制播放/暂停、上一首、下一首。',
-    'feat.m.prev':'上一首','feat.m.next':'下一首',
-    'feat.v.title':'音量控制','feat.v.desc':'通过 CGEventTap 拦截系统音量键，用自定义 HUD 替代系统弹窗。零延迟即时响应。','feat.v.low':'低',
-    'feat.br.title':'亮度调节','feat.br.desc':'通过 DisplayServices 私有框架实现 60fps 平滑橡皮筋式亮度过渡动画，追赶到目标值。',
-    'feat.bat.title':'电池监控','feat.bat.desc':'实时电量、充/放电功率（电压×电流）、适配器功率。通过 IOKit 获取硬件级数据，支持插拔和低电量提醒。',
-    'feat.bat.unplug':'拔掉电源','feat.bat.plug':'插上电源',
-    'feat.dnd.title':'专注模式','feat.dnd.desc':'通过拦截 F6 / 月亮键切换勿扰模式。自定义指示器叠加层，可选系统 Glass 音效。',
-    'feat.dnd.on':'开','feat.dnd.off':'关',
-    'feat.bt.title':'连接设备','feat.bt.desc':'蓝牙设备连接/断开通知。智能识别设备类型：AirPods、耳机、音箱（IOBluetooth）。',
-    'feat.bt.connected':'已连接','feat.bt.disc':'断开','feat.bt.conn':'连接',
-    'feat.sys.title':'系统状态','feat.sys.desc':'通过 AppleSMC 获取 CPU/GPU/内存使用率和温度。Mach API 和 IOKit 硬件级数据。',
-    'feat.sys.refresh':'刷新',
-    'feat.lang.title':'多语言支持','feat.lang.desc':'完整的中文和 English 本地化（约 110 个字符串键）。设置中即时切换，无需重启应用。',
-    'set.title':'设置面板','set.sub':'7 个设置分类，精细控制每个模块的行为','set.win':'设置 — LilyAisland',
-    'set.general':'通用','set.battery':'电池','set.connectivity':'连接设备','set.focus':'专注',
-    'set.display':'显示','set.sound':'声音','set.nowplaying':'正在播放',
-    'inst.title':'安装方式','inst.sub':'直接下载或从源码构建',
-    'inst.dl':'下载安装（推荐）',
-    'inst.s1':'前往 Releases 页面下载最新 .zip',
-    'inst.s2':'解压并将 LilyAisland.app 拖入「应用程序」文件夹',
-    'inst.s3':'启动应用，根据提示授予「辅助功能」权限',
-    'inst.s4':'灵动岛将出现在屏幕顶部中央',
-    'inst.bld':'从源码构建',
-    'inst.note':'需要 Xcode 16+，macOS 15.2+。Product → Archive 或使用 xcodebuild 命令行构建。',
-    // Toast
-    'toast.col':'折叠状态 — 彩色圆点显示 CPU/内存负载',
-    'toast.exp':'展开仪表盘 — CPU/GPU/内存/温度/电池/蓝牙',
-    'toast.vol':'音量 HUD — 拦截系统音量键，替代原生弹窗',
-    'toast.bri':'亮度 HUD — 60fps 平滑橡皮筋动画',
-    'toast.dnd.on':'专注模式：已开启','toast.dnd.off':'专注模式：已关闭',
-    'toast.bat':'电池状态','toast.bt.on':'蓝牙已连接','toast.bt.off':'蓝牙已断开',
-    'toast.med':'音乐播放器 — Apple Music 控制',
-    'toast.play':'正在播放','toast.pause':'已暂停','toast.prev':'上一首曲目','toast.next':'下一首曲目',
-    'toast.refresh':'系统状态已刷新','toast.lang':'语言已切换','toast.set':'设置已更新',
-    'toast.charger.on':'电源适配器已连接','toast.charger.off':'使用电池供电',
-    // Settings panel items
-    'set.launch':'开机自启','set.launch.d':'通过 SMAppService 注册登录项',
-    'set.haptic':'触觉反馈','set.haptic.d':'悬停/点击时触发 NSHapticFeedback',
-    'set.fshover':'全屏下悬停触发','set.fshover.d':'在全屏应用中也允许悬停展开',
-    'set.notch':'刘海圆角半径','set.notch.d':'4 – 16 pt，默认 7 pt',
-    'set.bat.enable':'启用电池提醒','set.bat.plug':'充/断电弹窗提醒',
-    'set.bat.pct':'显示电量百分比','set.bat.dwell':'弹窗驻留时长','set.bat.dwell.d':'1 – 10 秒',
-    'set.bat.low':'低电量提醒阈值','set.bat.low.d':'5 – 50%',
-    'set.bt.enable':'启用连接性提醒','set.bt.name':'显示设备名称','set.bt.dwell':'弹窗驻留时长','set.bt.dwell.d':'1 – 10 秒',
-    'set.foc.enable':'启用专注切换','set.foc.dwell':'弹窗驻留时长','set.foc.dwell.d':'1 – 10 秒',
-    'set.foc.sound':'进入专注时播放声音','set.foc.sound.d':'系统 Glass 音效',
-    'set.foc.hide':'隐藏标签',
-    'set.dis.enable':'启用亮度弹窗','set.dis.dwell':'弹窗驻留时长','set.dis.dwell.d':'1 – 5 秒',
-    'set.dis.step':'亮度步长','set.dis.step.d':'每次按键调整量',
-    'set.snd.enable':'启用音量弹窗','set.snd.dwell':'弹窗驻留时长','set.snd.dwell.d':'1 – 5 秒',
-    'set.snd.step':'音量步长','set.snd.step.d':'每次按键调整量',
-    'set.np.enable':'启用正在播放','set.np.art':'显示专辑封面',
-    'set.np.prog':'显示进度条','set.np.poll':'轮询间隔','set.np.poll.d':'0.5 – 5 秒',
-    'dnd.on':'开','dnd.off':'关',
-    'bt.connected':'AirPods Pro','bt.disconnected':'未连接',
-    'bt.disc':'断开','bt.conn':'连接',
-    'pwr.ac':'电源适配器','pwr.bat':'电池供电',
-    'adapter':'适配器功率','bat.charge':'充电功率','bat.output':'放电功率',
-  },
-  en: {
-    'nav.demo':'Demo','nav.features':'Features','nav.settings':'Settings','nav.install':'Install',
-    'hero.sub':'Bring iPhone Dynamic Island to your Mac — a floating, interactive pill-shaped widget for system monitoring, media control, and quick actions.',
-    'hero.demo':'Live Demo','hero.dl':'Download','hero.src':'Source Code',
-    'demo.title':'Interactive Demo','demo.sub':'Hover or click the island to experience every interaction mode — just like the real app',
-    'demo.bg':'macOS Desktop',
-    'ctrl.collapsed':'Collapsed','ctrl.expanded':'Dashboard','ctrl.volume':'Volume HUD','ctrl.brightness':'Brightness HUD',
-    'ctrl.dnd':'Focus / DND','ctrl.battery':'Battery Alert','ctrl.connectivity':'Bluetooth','ctrl.media':'Now Playing',
-    'ctrl.hint':'Hover or click the island, or use the buttons below to switch modes',
-    'feat.title':'All Features','feat.sub':'8 modules covering system monitoring, media control, and quick actions',
-    'feat.m.title':'Now Playing','feat.m.desc':'Apple Music track info, album art, playback progress. Play/pause, previous, next via AppleScript.',
-    'feat.m.prev':'Previous','feat.m.next':'Next',
-    'feat.v.title':'Volume Control','feat.v.desc':'Intercepts system volume keys via CGEventTap, replaces macOS bezel with a custom HUD. Zero-latency.','feat.v.low':'Low',
-    'feat.br.title':'Brightness Control','feat.br.desc':'Smooth rubber-banded brightness transitions at 60fps via DisplayServices private framework.',
-    'feat.bat.title':'Battery Monitor','feat.bat.desc':'Real-time percentage, charge/discharge wattage (voltage x current), adapter wattage. Plug/unplug and low-battery alerts via IOKit.',
-    'feat.bat.unplug':'Unplug','feat.bat.plug':'Plug In',
-    'feat.dnd.title':'Focus (DND)','feat.dnd.desc':'Toggle Do Not Disturb via F6 / Moon key interception. Custom indicator overlay, optional Glass sound effect.',
-    'feat.dnd.on':'On','feat.dnd.off':'Off',
-    'feat.bt.title':'Connectivity','feat.bt.desc':'Bluetooth device connect/disconnect notifications. Smart device type recognition (AirPods, headphones, speakers) via IOBluetooth.',
-    'feat.bt.connected':'Connected','feat.bt.disc':'Disconnect','feat.bt.conn':'Connect',
-    'feat.sys.title':'System Stats','feat.sys.desc':'CPU, GPU, memory usage and temperature via AppleSMC. Hardware-level data from Mach API and IOKit.',
-    'feat.sys.refresh':'Refresh',
-    'feat.lang.title':'Localization','feat.lang.desc':'Complete Chinese and English localization (~110 keys). Instant switch in Settings, no restart needed.',
-    'set.title':'Settings Panel','set.sub':'7 categories with fine-grained control over every module','set.win':'Settings — LilyAisland',
-    'set.general':'General','set.battery':'Battery','set.connectivity':'Connectivity','set.focus':'Focus',
-    'set.display':'Display','set.sound':'Sound','set.nowplaying':'Now Playing',
-    'inst.title':'Installation','inst.sub':'Download directly or build from source',
-    'inst.dl':'Download (Recommended)',
-    'inst.s1':'Go to Releases page and download the latest .zip',
-    'inst.s2':'Unzip and drag LilyAisland.app to Applications',
-    'inst.s3':'Launch the app, grant Accessibility permission when prompted',
-    'inst.s4':'The island appears at the top center of your screen',
-    'inst.bld':'Build from Source',
-    'inst.note':'Requires Xcode 16+, macOS 15.2+. Product → Archive or use xcodebuild CLI.',
-    // Toast
-    'toast.col':'Collapsed — colored dots show CPU / Memory load',
-    'toast.exp':'Dashboard — CPU / GPU / Memory / Temperature / Battery / Bluetooth',
-    'toast.vol':'Volume HUD — intercepts system volume keys',
-    'toast.bri':'Brightness HUD — 60fps rubber-banded animation',
-    'toast.dnd.on':'Focus Mode: On','toast.dnd.off':'Focus Mode: Off',
-    'toast.bat':'Battery Status','toast.bt.on':'Bluetooth Connected','toast.bt.off':'Bluetooth Disconnected',
-    'toast.med':'Now Playing — Apple Music Controls',
-    'toast.play':'Playing','toast.pause':'Paused','toast.prev':'Previous Track','toast.next':'Next Track',
-    'toast.refresh':'Stats Refreshed','toast.lang':'Language Switched','toast.set':'Setting Updated',
-    'toast.charger.on':'Charger Connected','toast.charger.off':'On Battery',
-    // Settings panel items
-    'set.launch':'Launch at Login','set.launch.d':'Register via SMAppService',
-    'set.haptic':'Haptic Feedback','set.haptic.d':'NSHapticFeedback on hover/click',
-    'set.fshover':'Hover in Full Screen','set.fshover.d':'Allow hover expansion in fullscreen apps',
-    'set.notch':'Notch Curve Radius','set.notch.d':'4 – 16 pt, default 7 pt',
-    'set.bat.enable':'Enable Battery Alerts','set.bat.plug':'Alert on Connect/Disconnect',
-    'set.bat.pct':'Show Percentage','set.bat.dwell':'Duration','set.bat.dwell.d':'1 – 10 seconds',
-    'set.bat.low':'Low Battery Threshold','set.bat.low.d':'5 – 50%',
-    'set.bt.enable':'Enable Connectivity Alerts','set.bt.name':'Show Device Name','set.bt.dwell':'Duration','set.bt.dwell.d':'1 – 10 seconds',
-    'set.foc.enable':'Enable Focus Toggle','set.foc.dwell':'Duration','set.foc.dwell.d':'1 – 10 seconds',
-    'set.foc.sound':'Play Sound on Enter','set.foc.sound.d':'System Glass sound',
-    'set.foc.hide':'Hide Label',
-    'set.dis.enable':'Enable Brightness Overlay','set.dis.dwell':'Duration','set.dis.dwell.d':'1 – 5 seconds',
-    'set.dis.step':'Step Size','set.dis.step.d':'Adjustment per key press',
-    'set.snd.enable':'Enable Volume Overlay','set.snd.dwell':'Duration','set.snd.dwell.d':'1 – 5 seconds',
-    'set.snd.step':'Step Size','set.snd.step.d':'Adjustment per key press',
-    'set.np.enable':'Enable Now Playing','set.np.art':'Show Album Artwork',
-    'set.np.prog':'Show Progress Bar','set.np.poll':'Polling Interval','set.np.poll.d':'0.5 – 5 seconds',
-    'dnd.on':'On','dnd.off':'Off',
-    'bt.connected':'AirPods Pro','bt.disconnected':'Disconnected',
-    'bt.disc':'Disconnect','bt.conn':'Connect',
-    'pwr.ac':'Power Adapter','pwr.bat':'On Battery',
-    'adapter':'Adapter Power','bat.charge':'Charge Rate','bat.output':'Output Rate',
-  }
-};
-
-var L = 'zh';
-function t(k){return (T[L]||T.en)[k]||k;}
+// ===== I18N =====
+var T={
+zh:{
+  'nav.demo':'演示','nav.features':'功能','nav.settings':'设置','nav.install':'安装',
+  'hero.sub':'将 iPhone 灵动岛体验带到 Mac — 悬浮在屏幕顶部的交互式胶囊控件，集系统监控、媒体控制、快捷操作为一体。',
+  'hero.demo':'体验演示','hero.dl':'下载应用','hero.src':'查看源码',
+  'demo.title':'交互式演示','demo.sub':'悬停或点击灵动岛，与真实应用完全一致的交互体验','demo.bg':'macOS 桌面',
+  'ctrl.col':'折叠状态','ctrl.exp':'展开仪表盘','ctrl.vol':'音量 HUD','ctrl.bri':'亮度 HUD',
+  'ctrl.dnd':'专注模式','ctrl.bat':'电池','ctrl.med':'音乐播放',
+  'ctrl.hint':'悬停或点击灵动岛，也可使用下方按钮切换模式',
+  'feat.title':'全部功能','feat.sub':'8 个模块覆盖系统监控、媒体控制和快捷操作',
+  'm.title':'正在播放','m.desc':'Apple Music 曲目信息、专辑封面、播放进度。通过 AppleScript 控制播放/暂停、上一首、下一首。',
+  'm.prev':'上一首','m.next':'下一首',
+  'v.title':'音量控制','v.desc':'通过 CGEventTap 拦截系统音量键，用自定义 HUD 替代系统弹窗。零延迟即时响应。',
+  'br.title':'亮度调节','br.desc':'通过 DisplayServices 私有框架实现 60fps 平滑橡皮筋式亮度过渡动画。',
+  'bat.title':'电池监控','bat.desc':'实时电量、充/放电功率（电压×电流）、适配器功率。通过 IOKit 获取硬件级数据。',
+  'bat.charging':'充电中','bat.battery':'电池','bat.unplug':'拔掉电源','bat.plug':'插上电源',
+  'd.title':'专注模式','d.desc':'通过拦截 F6 / 月亮键切换勿扰模式。自定义指示器叠加层，可选 Glass 音效。',
+  'd.on':'开','d.off':'关',
+  'c.title':'连接设备','c.desc':'蓝牙设备连接/断开检测，智能识别设备类型（AirPods、耳机、音箱）。信息展示在展开面板中。',
+  'c.connected':'已连接','c.disconnected':'未连接',
+  's.title':'系统状态','s.desc':'通过 AppleSMC 获取 CPU/GPU/内存使用率和温度。Mach API 和 IOKit 硬件级数据。',
+  's.refresh':'刷新',
+  'l.title':'多语言支持','l.desc':'完整的中文和 English 本地化（约 110 个字符串键）。设置中即时切换，无需重启。',
+  'set.title':'设置面板','set.sub':'7 个设置分类，精细控制每个模块的行为','set.win':'设置 — LilyAisland',
+  'set.general':'通用','set.battery':'电池','set.connectivity':'连接设备','set.focus':'专注',
+  'set.display':'显示','set.sound':'声音','set.nowplaying':'正在播放',
+  'inst.title':'安装方式','inst.sub':'直接下载或从源码构建',
+  'inst.dl':'下载安装（推荐）',
+  'inst.s1':'前往 Releases 页面下载最新 .zip',
+  'inst.s2':'解压并将 LilyAisland.app 拖入「应用程序」文件夹',
+  'inst.s3':'启动应用，根据提示授予「辅助功能」权限',
+  'inst.s4':'灵动岛将出现在屏幕顶部中央',
+  'inst.bld':'从源码构建','inst.note':'需要 Xcode 16+，macOS 15.2+。Product → Archive 或 xcodebuild 命令行构建。',
+  'toast.col':'折叠状态 — 彩色圆点显示 CPU/内存使用率',
+  'toast.exp':'展开仪表盘 — CPU/GPU/内存/温度/电池/蓝牙',
+  'toast.vol':'音量 HUD — 拦截系统音量键','toast.bri':'亮度 HUD — 60fps 橡皮筋动画',
+  'toast.dnd.on':'专注模式：已开启','toast.dnd.off':'专注模式：已关闭',
+  'toast.bat':'电池状态','toast.med':'音乐播放器',
+  'toast.play':'正在播放','toast.pause':'已暂停','toast.prev':'上一首','toast.next':'下一首',
+  'toast.refresh':'系统状态已刷新','toast.lang':'语言已切换','toast.set':'设置已更新',
+  'toast.charger.on':'电源适配器已连接','toast.charger.off':'使用电池供电',
+  // Settings items
+  'si.launch':'开机自启','si.launch.d':'通过 SMAppService 注册登录项',
+  'si.haptic':'触觉反馈','si.haptic.d':'悬停/点击时触发 NSHapticFeedback',
+  'si.fshover':'全屏下悬停触发','si.fshover.d':'在全屏应用中也允许悬停展开',
+  'si.notch':'刘海圆角半径','si.notch.d':'4 – 16 pt，默认 7 pt',
+  'si.bat.e':'启用电池提醒','si.bat.p':'充/断电弹窗提醒','si.bat.pct':'显示电量百分比',
+  'si.bat.d':'弹窗驻留时长','si.bat.d.d':'1 – 10 秒','si.bat.l':'低电量提醒阈值','si.bat.l.d':'5 – 50%',
+  'si.bt.e':'启用连接性提醒','si.bt.n':'显示设备名称','si.bt.d':'弹窗驻留时长','si.bt.d.d':'1 – 10 秒',
+  'si.foc.e':'启用专注切换','si.foc.d':'弹窗驻留时长','si.foc.d.d':'1 – 10 秒',
+  'si.foc.s':'进入专注时播放声音','si.foc.s.d':'系统 Glass 音效','si.foc.h':'隐藏标签',
+  'si.dis.e':'启用亮度弹窗','si.dis.d':'弹窗驻留时长','si.dis.d.d':'1 – 5 秒','si.dis.st':'亮度步长',
+  'si.snd.e':'启用音量弹窗','si.snd.d':'弹窗驻留时长','si.snd.d.d':'1 – 5 秒','si.snd.st':'音量步长',
+  'si.np.e':'启用正在播放','si.np.a':'显示专辑封面','si.np.p':'显示进度条','si.np.i':'轮询间隔','si.np.i.d':'0.5 – 5 秒',
+},
+en:{
+  'nav.demo':'Demo','nav.features':'Features','nav.settings':'Settings','nav.install':'Install',
+  'hero.sub':'Bring iPhone Dynamic Island to your Mac — a floating, interactive pill-shaped widget for system monitoring, media control, and quick actions.',
+  'hero.demo':'Live Demo','hero.dl':'Download','hero.src':'Source Code',
+  'demo.title':'Interactive Demo','demo.sub':'Hover or click the island — exact same interaction as the real app','demo.bg':'macOS Desktop',
+  'ctrl.col':'Collapsed','ctrl.exp':'Dashboard','ctrl.vol':'Volume HUD','ctrl.bri':'Brightness HUD',
+  'ctrl.dnd':'Focus / DND','ctrl.bat':'Battery','ctrl.med':'Now Playing',
+  'ctrl.hint':'Hover or click the island, or use the buttons below',
+  'feat.title':'All Features','feat.sub':'8 modules covering system monitoring, media control, and quick actions',
+  'm.title':'Now Playing','m.desc':'Apple Music track info, album art, playback progress. Play/pause, previous, next via AppleScript.',
+  'm.prev':'Previous','m.next':'Next',
+  'v.title':'Volume Control','v.desc':'Intercepts system volume keys via CGEventTap, replaces macOS bezel with a custom HUD. Zero-latency.',
+  'br.title':'Brightness Control','br.desc':'Smooth rubber-banded brightness transitions at 60fps via DisplayServices private framework.',
+  'bat.title':'Battery Monitor','bat.desc':'Real-time percentage, charge/discharge wattage (voltage x current), adapter wattage. Hardware-level data via IOKit.',
+  'bat.charging':'Charging','bat.battery':'Battery','bat.unplug':'Unplug','bat.plug':'Plug In',
+  'd.title':'Focus (DND)','d.desc':'Toggle Do Not Disturb via F6 / Moon key interception. Custom indicator overlay, optional Glass sound.',
+  'd.on':'On','d.off':'Off',
+  'c.title':'Connectivity','c.desc':'Bluetooth device connect/disconnect detection. Smart device type recognition (AirPods, headphones, speakers). Shown in expanded panel.',
+  'c.connected':'Connected','c.disconnected':'Disconnected',
+  's.title':'System Stats','s.desc':'CPU, GPU, memory usage and temperature via AppleSMC. Hardware-level data from Mach API and IOKit.',
+  's.refresh':'Refresh',
+  'l.title':'Localization','l.desc':'Complete Chinese and English localization (~110 keys). Instant switch in Settings, no restart needed.',
+  'set.title':'Settings Panel','set.sub':'7 categories with fine-grained control over every module','set.win':'Settings — LilyAisland',
+  'set.general':'General','set.battery':'Battery','set.connectivity':'Connectivity','set.focus':'Focus',
+  'set.display':'Display','set.sound':'Sound','set.nowplaying':'Now Playing',
+  'inst.title':'Installation','inst.sub':'Download directly or build from source',
+  'inst.dl':'Download (Recommended)',
+  'inst.s1':'Go to Releases page and download the latest .zip',
+  'inst.s2':'Unzip and drag LilyAisland.app to Applications',
+  'inst.s3':'Launch the app, grant Accessibility permission when prompted',
+  'inst.s4':'The island appears at the top center of your screen',
+  'inst.bld':'Build from Source','inst.note':'Requires Xcode 16+, macOS 15.2+. Product → Archive or use xcodebuild CLI.',
+  'toast.col':'Collapsed — colored dots show CPU / Memory usage',
+  'toast.exp':'Dashboard — CPU / GPU / Memory / Temp / Battery / Bluetooth',
+  'toast.vol':'Volume HUD — intercepts system volume keys','toast.bri':'Brightness HUD — 60fps rubber-banded animation',
+  'toast.dnd.on':'Focus Mode: On','toast.dnd.off':'Focus Mode: Off',
+  'toast.bat':'Battery Status','toast.med':'Now Playing',
+  'toast.play':'Playing','toast.pause':'Paused','toast.prev':'Previous','toast.next':'Next',
+  'toast.refresh':'Stats Refreshed','toast.lang':'Language Switched','toast.set':'Setting Updated',
+  'toast.charger.on':'Charger Connected','toast.charger.off':'On Battery',
+  // Settings items
+  'si.launch':'Launch at Login','si.launch.d':'Register via SMAppService',
+  'si.haptic':'Haptic Feedback','si.haptic.d':'NSHapticFeedback on hover/click',
+  'si.fshover':'Hover in Full Screen','si.fshover.d':'Allow hover expansion in fullscreen apps',
+  'si.notch':'Notch Curve Radius','si.notch.d':'4 – 16 pt, default 7 pt',
+  'si.bat.e':'Enable Battery Alerts','si.bat.p':'Alert on Connect/Disconnect','si.bat.pct':'Show Percentage',
+  'si.bat.d':'Duration','si.bat.d.d':'1 – 10 s','si.bat.l':'Low Battery Threshold','si.bat.l.d':'5 – 50%',
+  'si.bt.e':'Enable Connectivity Alerts','si.bt.n':'Show Device Name','si.bt.d':'Duration','si.bt.d.d':'1 – 10 s',
+  'si.foc.e':'Enable Focus Toggle','si.foc.d':'Duration','si.foc.d.d':'1 – 10 s',
+  'si.foc.s':'Play Sound on Enter','si.foc.s.d':'System Glass sound','si.foc.h':'Hide Label',
+  'si.dis.e':'Enable Brightness Overlay','si.dis.d':'Duration','si.dis.d.d':'1 – 5 s','si.dis.st':'Step Size',
+  'si.snd.e':'Enable Volume Overlay','si.snd.d':'Duration','si.snd.d.d':'1 – 5 s','si.snd.st':'Step Size',
+  'si.np.e':'Enable Now Playing','si.np.a':'Show Album Artwork','si.np.p':'Show Progress Bar',
+  'si.np.i':'Polling Interval','si.np.i.d':'0.5 – 5 s',
+}};
+var L='zh';function t(k){return (T[L]||T.en)[k]||k;}
 function setLang(l){
-  L=l;
-  document.documentElement.lang=l==='zh'?'zh-CN':'en';
+  L=l;document.documentElement.lang=l==='zh'?'zh-CN':'en';
   document.getElementById('btnZh').classList.toggle('on',l==='zh');
   document.getElementById('btnEn').classList.toggle('on',l==='en');
-  document.querySelectorAll('[data-i18n]').forEach(function(el){
-    var k=el.getAttribute('data-i18n');
-    if(T[L]&&T[L][k]) el.textContent=T[L][k];
-  });
-  updateDNDLabel();updateBTLabel();updateChargerBtn();updatePlayText();
-  renderSettings();
-  if (mode==='expanded'||mode==='media') renderIsland();
+  document.querySelectorAll('[data-i18n]').forEach(function(el){var k=el.getAttribute('data-i18n');if(T[L]&&T[L][k])el.textContent=T[L][k];});
+  updateLabels();renderSettings();
 }
 
-// ===== STATE — exact from IslandState =====
-var S = {
-  cpu:32, gpu:18, mem:45, cpuTemp:62, gpuTemp:48,
-  battery:85, charging:true,
-  dndOn:false, btConnected:true, btDevice:'AirPods Pro',
-  playing:false, volume:65, brightness:80
-};
-var mode = 'collapsed';
-var autoT = null;
-var progT = null;
+// ===== STATE =====
+var S={cpu:32,gpu:18,mem:45,cpuTemp:62,gpuTemp:48,battery:85,charging:true,dndOn:false,btConnected:true,btDevice:'AirPods Pro',playing:false,volume:65,brightness:80};
+var mode='collapsed',autoT=null,progT=null;
 
 // ===== TOAST =====
-var toastEl = document.getElementById('toast');
-var toastT = null;
-function toast(msg){
-  toastEl.textContent = msg;
-  toastEl.classList.add('in');
-  clearTimeout(toastT);
-  toastT = setTimeout(function(){toastEl.classList.remove('in')},2000);
-}
+var toastEl=document.getElementById('toast'),toastT=null;
+function toast(msg){toastEl.textContent=msg;toastEl.classList.add('in');clearTimeout(toastT);toastT=setTimeout(function(){toastEl.classList.remove('in')},2000);}
 
-// ===== DOM REFS =====
-var stage = document.getElementById('stage');
-var island = document.getElementById('island');
-var islandBody = document.getElementById('islandBody');
-var notchFlare = document.getElementById('notchFlare');
+// ===== DOM =====
+var wrap=document.getElementById('wrap'),island=document.getElementById('island'),islandBody=document.getElementById('islandBody'),flareRow=document.getElementById('flareRow');
 
-// ===== ISLAND RENDERING =====
-function renderIsland(){
+// ===== ISLAND RENDER =====
+function render(){
   clearTimeout(autoT);clearInterval(progT);
-  var cls = ''; // extra classes for stage
-  var html = '';
-
-  // Reset island to base collapsed state
-  island.style.width = ''; island.style.height = '';
-  island.style.borderRadius = '';
+  island.className='island';islandBody.innerHTML='';
+  var html='';var cls='';var flareOn=false;
 
   switch(mode){
-    case 'collapsed':
-      cls = 'collapsed';
-      html = '<div class="island-dots">'+
-        '<div class="island-dot" id="demoCpuDot"></div>'+
-        '<div class="island-dot" id="demoMemDot"></div>'+
-        '</div>';
-      break;
-
-    case 'hovered':
-      cls = 'hovered';
-      html = '<div class="island-labels">'+
-        '<span class="island-label">CPU '+S.cpu+'%</span>'+
-        '<span class="island-label">GPU '+S.gpu+'%</span>'+
-        '<span class="island-label">MEM '+S.mem+'%</span>'+
-        '</div>';
-      break;
-
-    case 'expanded':
-      cls = 'expanded';
-      island.style.width = '500px';
-      island.style.height = '130px';
-      island.style.borderRadius = '32px';
-      html = '<div class="exp-panel" style="display:flex">'+
-        '<div class="row1">'+
-          '<svg width="24" height="12" viewBox="0 0 24 12" style="flex-shrink:0"><rect x="0" y="0" width="21" height="12" rx="3" fill="none" stroke="'+(S.charging?'#34C759':'#8E8E93')+'" stroke-width="1.2"/><rect x="2" y="2" width="'+(17*S.battery/100)+'" height="8" rx="1.5" fill="'+(S.charging?'#34C759':S.battery<=20?'#FF3B30':'#8E8E93')+'"/><rect x="22" y="3" width="2" height="6" rx="1" fill="'+(S.charging?'#34C759':'#8E8E93')+'"/></svg>'+
-          '<span class="pwr-text">'+(S.charging?t('pwr.ac'):t('pwr.bat'))+'</span>'+
-          '<span class="pct-text'+(S.charging?' charging':'')+'">'+S.battery+'%</span>'+
-        '</div>'+
-        '<div class="row2">'+
-          buildStatCol(t('adapter'),S.charging?'18.5W':'—')+
-          buildStatCol(S.charging?t('bat.charge'):t('bat.output'),S.charging?'12.3W':'5.2W')+
-          buildStatCol('CPU',S.cpu+'%',S.cpuTemp+'°')+
-          buildStatCol('GPU',S.gpu+'%',S.gpuTemp+'°')+
-          '<div class="bt-col"><span class="stat-label">Bluetooth</span><span class="stat-val" style="font-size:.75rem">'+(S.btConnected?S.btDevice:'—')+'</span></div>'+
-        '</div>'+
-        '</div>';
-      break;
-
-    case 'volume':
-      cls = 'hud';
-      island.style.width = '360px'; island.style.height = '34px';
-      html = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0;margin-right:10px;fill:white"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>'+
+  case'collapsed':
+    cls='w0';
+    html='<div class="dots-row"><div class="dot cpu-n" id="dCpu"></div><div class="dot mem-n" id="dMem"></div></div>';
+    break;
+  case'hovered':
+    cls='w1';flareOn=true;
+    // SAME dots as collapsed — matches source line 367-371
+    html='<div class="dots-row"><div class="dot cpu-n" id="dCpu"></div><div class="dot mem-n" id="dMem"></div></div>';
+    break;
+  case'expanded':
+    cls='we system';flareOn=true;
+    island.style.width='500px';island.style.height='130px';island.style.borderRadius='32px';
+    html='<div class="exp-system" style="display:flex">'+
+      '<div class="r1">'+
+        // Battery icon inline SVG
+        '<svg width="24" height="12" viewBox="0 0 24 12" style="flex-shrink:0"><rect x="0" y="0" width="21" height="12" rx="3" fill="none" stroke="'+(S.charging?'#34C759':'#8E8E93')+'" stroke-width="1.2"/><rect x="2" y="2" width="'+(17*S.battery/100)+'" height="8" rx="1.5" fill="'+(S.charging?'#34C759':S.battery<=20?'#FF3B30':'#8E8E93')+'"/><rect x="22" y="3" width="2" height="6" rx="1" fill="'+(S.charging?'#34C759':'#8E8E93')+'"/></svg>'+
+        // Headphone icon
+        '<svg viewBox="0 0 24 24" style="width:18px;height:18px;flex-shrink:0;fill:'+(S.btConnected?'#34C759':'#8E8E93')+'"><path d="M12 1a9 9 0 00-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 00-9-9z"/></svg>'+
+        '<span class="pwr">'+(S.charging?'电源适配器':'电池供电')+'</span>'+
+        '<span class="pct'+(S.charging?' chg':'')+'">'+S.battery+'%</span>'+
+      '</div>'+
+      '<div class="r2">'+
+        col(tk('adapter'),S.charging?'18.5W':'—')+
+        col(tk(S.charging?'charge':'output'),S.charging?'12.3W':'5.2W')+
+        col('CPU',S.cpu+'%',S.cpuTemp+'°')+
+        col('GPU',S.gpu+'%',S.gpuTemp+'°')+
+        '<div class="col"><div class="lbl">'+tk('bt')+'</div><div class="val" style="font-size:.75rem;font-family:inherit">'+(S.btConnected?S.btDevice:'—')+'</div></div>'+
+      '</div></div>';
+    break;
+  case'volume':
+    cls='wh';flareOn=true;island.style.width='360px';island.style.height='34px';
+    html='<svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0;margin-right:10px;fill:var(--white)"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>'+
       '<div class="hud-track"><div class="hud-fill" style="width:'+S.volume+'%"></div></div>'+
       '<span class="hud-pct">'+S.volume+'%</span>';
-      break;
-
-    case 'brightness':
-      cls = 'hud';
-      island.style.width = '360px'; island.style.height = '34px';
-      html = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0;margin-right:10px;fill:white"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m-10-10h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>'+
-      '<div class="hud-track"><div class="hud-fill bri" style="width:'+S.brightness+'%"></div></div>'+
+    break;
+  case'brightness':
+    cls='wh';flareOn=true;island.style.width='360px';island.style.height='34px';
+    html='<svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0;margin-right:10px;fill:var(--white)"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m-10-10h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>'+
+      '<div class="hud-track"><div class="hud-fill" style="width:'+S.brightness+'%"></div></div>'+
       '<span class="hud-pct">'+S.brightness+'%</span>';
-      break;
-
-    case 'dnd':
-      cls = 'hud';
-      island.style.width = '360px'; island.style.height = '34px';
-      S.dndOn = !S.dndOn; updateDNDToggleFE();
-      html = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0;margin-right:10px;fill:'+(S.dndOn?'#5856D6':'white')+'"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>'+
-      (S.dndOn
-        ? '<span class="hud-label indigo">'+t('dnd.on')+'</span>'
-        : '<span class="hud-label off">'+t('dnd.off')+'</span>');
-      toast(S.dndOn?t('toast.dnd.on'):t('toast.dnd.off'));
-      break;
-
-    case 'battery':
-      cls = 'hud';
-      island.style.width = '360px'; island.style.height = '34px';
-      html = '<span style="font-weight:600;color:'+(S.charging?'var(--green)':'var(--white)')+';margin-right:10px">'+(S.charging?'充电中':'电池')+'</span>'+
-        '<span style="font-size:1rem;font-weight:600;color:var(--white)">'+S.battery+'%</span>'+
-        '<span style="font-size:.75rem;color:var(--gray);margin-left:8px">'+(S.charging?'18.5W':'5.2W')+'</span>';
-      toast(t('toast.bat')+': '+S.battery+'%');
-      break;
-
-    case 'connectivity':
-      cls = 'hud';
-      island.style.width = '360px'; island.style.height = '34px';
-      html = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0;margin-right:10px;fill:'+(S.btConnected?'#34C759':'#8E8E93')+'"><path d="M12 1a9 9 0 00-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 00-9-9z"/></svg>'+
-      '<span class="hud-label">'+(S.btConnected?S.btDevice:t('bt.disconnected'))+'</span>';
-      toast(S.btConnected?t('toast.bt.on'):t('toast.bt.off'));
-      break;
-
-    case 'media':
-      cls = 'expanded';
-      island.style.width = '500px';
-      island.style.height = '200px';
-      island.style.borderRadius = '32px';
-      S.playing = true; updatePlayText();
-      var prog = 45;
-      html = '<div class="media-exp" style="display:flex">'+
-        '<div class="m-row1">'+
-          '<div class="art">CD</div>'+
-          '<div class="track-info"><div class="song">Blinding Lights</div><div class="artist">The Weeknd</div></div>'+
-          '<div class="eq-bars"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>'+
-        '</div>'+
-        '<div class="m-row2">'+
-          '<span class="time">1:23</span>'+
-          '<div class="prog-track"><div class="prog-fill" id="mpBar" style="width:45%"></div></div>'+
-          '<span class="time end">-3:12</span>'+
-        '</div>'+
-        '<div class="m-row3">'+
-          '<button class="ctrl-btn" data-ma="prev">&#x23EE;</button>'+
-          '<button class="ctrl-btn play-btn" data-ma="play" id="mpPlayBtn">&#x23F8;</button>'+
-          '<button class="ctrl-btn" data-ma="next">&#x23ED;</button>'+
-        '</div>'+
-        '</div>';
-      // bind media controls after render
-      setTimeout(bindMediaCtrls,0);
-      // animate progress
-      progT = setInterval(function(){
-        prog = (prog + 0.25) % 100;
-        var bar = document.getElementById('mpBar');
-        if(bar) bar.style.width = prog+'%';
-      },300);
-      toast(t('toast.med'));
-      break;
+    break;
+  case'dnd':
+    cls='wh';flareOn=true;island.style.width='360px';island.style.height='34px';
+    S.dndOn=!S.dndOn;updateDNDIcon();
+    html='<svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0;margin-right:10px;fill:'+(S.dndOn?'#5856D6':'white')+'" id="dndMoon"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>'+
+      (S.dndOn?'<span class="hud-lbl on">'+t('d.on')+'</span>':'<span class="hud-lbl off">'+t('d.off')+'</span>');
+    toast(S.dndOn?t('toast.dnd.on'):t('toast.dnd.off'));
+    break;
+  case'battery':
+    cls='wh';flareOn=true;island.style.width='360px';island.style.height='34px';
+    html='<span style="font-weight:600;color:var(--white);margin-right:10px">'+(S.charging?t('bat.charging'):t('bat.battery'))+'</span>'+
+      '<span style="font-size:1rem;font-weight:600;color:'+(S.battery<=20&&!S.charging?'var(--red)':'var(--white)')+'">'+S.battery+'%</span>'+
+      '<span style="font-size:.75rem;color:var(--gray);margin-left:8px">'+(S.charging?'18.5W':'5.2W')+'</span>';
+    toast(t('toast.bat')+': '+S.battery+'%');
+    break;
+  case'media':
+    cls='we media';flareOn=true;
+    island.style.width='500px';island.style.height='200px';island.style.borderRadius='32px';
+    S.playing=true;updatePlayText();
+    var p=45;
+    html='<div class="exp-media" style="display:flex">'+
+      '<div class="mr1">'+
+        '<div class="art">CD</div>'+
+        '<div class="info"><div class="song">Blinding Lights</div><div class="artist">The Weeknd</div></div>'+
+        '<div class="eq"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>'+
+      '</div>'+
+      '<div class="mr2"><span class="time">1:23</span><div class="ptrack"><div class="pfill" id="mpBar" style="width:45%"></div></div><span class="time end">-3:12</span></div>'+
+      '<div class="mr3">'+
+        '<button class="mbtn" data-ma="prev">&#x23EE;</button>'+
+        '<button class="mbtn play" data-ma="play" id="mpPlay">&#x23F8;</button>'+
+        '<button class="mbtn" data-ma="next">&#x23ED;</button>'+
+      '</div></div>';
+    setTimeout(bindMedia,0);
+    progT=setInterval(function(){p=(p+0.25)%100;var b=document.getElementById('mpBar');if(b)b.style.width=p+'%';},300);
+    break;
   }
 
-  // Apply
-  stage.className = 'island-stage ' + cls;
-  islandBody.innerHTML = html;
+  island.className='island '+cls;
+  islandBody.innerHTML=html;
+  flareRow.className='flare-row'+(flareOn?' on':'');
+  // Update dots
+  if(mode==='collapsed'||mode==='hovered')updDots();
+  // Set flare width
+  var fw;
+  if(mode==='collapsed')fw='180px';else if(mode==='hovered')fw='203px';
+  else if(mode==='expanded'||mode==='media')fw='500px';else fw='360px';
+  flareRow.style.width='calc('+fw+' + 2px)';
 
-  // Update dots if collapsed
-  if (mode==='collapsed') updateDots();
-
-  // Set notch flare width
-  var flareW;
-  if (mode==='collapsed'||mode==='hovered') flareW = (mode==='hovered'?'203px':'180px');
-  else if (mode==='expanded'||mode==='media') flareW = '500px';
-  else flareW = '360px';
-  notchFlare.style.width = 'calc('+flareW+' + 2px)';
-
-  // Auto-return HUD modes
-  if (['volume','brightness','dnd','battery','connectivity'].indexOf(mode)>=0){
-    autoT = setTimeout(function(){setMode('collapsed')},2500);
-  }
+  // HUD auto-return
+  if(['volume','brightness','dnd','battery'].indexOf(mode)>=0)
+    autoT=setTimeout(function(){setMode('collapsed')},2500);
 }
 
-function buildStatCol(label,val,sub){
-  var s = sub?'<span class="stat-sub">'+sub+'</span>':'';
-  return '<div class="stat-col"><span class="stat-label">'+label+'</span><span class="stat-val">'+val+'</span>'+s+'</div>';
+function col(l,v,s){
+  return '<div class="col"><div class="lbl">'+l+'</div><div class="val">'+v+'</div>'+(s?'<div class="sub">'+s+'</div>':'')+'</div>';
+}
+function tk(k){return t(k)==='adapter'?'适配器功率':t(k)==='charge'?'充电功率':t(k)==='output'?'放电功率':t(k)==='bt'?'蓝牙':t(k);}
+
+function updDots(){
+  var c=document.getElementById('dCpu'),m=document.getElementById('dMem');
+  if(c)c.className='dot '+(S.cpu>80?'cpu-c':S.cpu>50?'cpu-w':'cpu-n');
+  if(m)m.className='dot '+(S.mem>80?'mem-c':S.mem>60?'mem-w':'mem-n');
+}
+function bindMedia(){
+  var bs=islandBody.querySelectorAll('[data-ma]');
+  for(var i=0;i<bs.length;i++)bs[i].addEventListener('click',function(e){e.stopPropagation();var a=this.getAttribute('data-ma');
+    if(a==='play'){S.playing=!S.playing;this.innerHTML=S.playing?'&#x23F8;':'&#x25B6;';updatePlayText();toast(S.playing?t('toast.play'):t('toast.pause'));}
+    else if(a==='prev')toast(t('toast.prev'));else if(a==='next')toast(t('toast.next'));});
 }
 
-function updateDots(){
-  var cd = document.getElementById('demoCpuDot');
-  var md = document.getElementById('demoMemDot');
-  if (cd){
-    cd.className = 'island-dot '+(S.cpu>80?'cpu-crit':S.cpu>50?'cpu-warn':'cpu-normal');
-  }
-  if (md){
-    md.className = 'island-dot '+(S.mem>80?'mem-crit':S.mem>60?'mem-warn':'mem-normal');
-  }
-}
-
-function bindMediaCtrls(){
-  var btns = islandBody.querySelectorAll('[data-ma]');
-  for (var i=0;i<btns.length;i++){
-    btns[i].addEventListener('click',function(e){
-      e.stopPropagation();
-      var a = this.getAttribute('data-ma');
-      if (a==='play'){
-        S.playing=!S.playing;
-        this.innerHTML = S.playing?'&#x23F8;':'&#x25B6;';
-        updatePlayText();
-        toast(S.playing?t('toast.play'):t('toast.pause'));
-      } else if (a==='prev') toast(t('toast.prev'));
-      else if (a==='next') toast(t('toast.next'));
-    });
-  }
-}
-
-// ===== ISLAND EVENTS =====
-island.addEventListener('mouseenter',function(){
-  if (mode==='collapsed') setMode('hovered');
+// ===== WRAPPER EVENTS — matches source onHover + onTap on outer frame =====
+wrap.addEventListener('mouseenter',function(){
+  if(['volume','brightness','dnd','battery'].indexOf(mode)>=0)return;
+  if(mode==='collapsed'){setMode('hovered')}
 });
-island.addEventListener('mouseleave',function(){
-  if (mode==='hovered') setMode('collapsed');
+wrap.addEventListener('mouseleave',function(){
+  if(mode==='hovered'||mode==='expanded'){setMode('collapsed')}
 });
-island.addEventListener('click',function(e){
-  if (e.target.closest('[data-ma]')) return; // media button click
-  if (['volume','brightness','dnd','battery','connectivity','media'].indexOf(mode)>=0) return;
-  if (mode==='expanded'){ setMode('collapsed'); }
-  else if (mode==='collapsed'||mode==='hovered'){ setMode('expanded'); }
+wrap.addEventListener('click',function(e){
+  if(e.target.closest('[data-ma]'))return;
+  if(['volume','brightness','dnd','battery'].indexOf(mode)>=0)return;
+  if(mode==='hovered'){setMode('expanded')}
 });
 
-// ===== SET MODE =====
 function setMode(m){
-  mode = m;
-  renderIsland();
-  highlightCtrl();
+  mode=m;render();highlightCtrl();
 }
 
 // ===== CONTROL BUTTONS =====
-var btns = document.querySelectorAll('#ctrlBar .ctrl-btn');
-function highlightCtrl(){
-  for (var i=0;i<btns.length;i++){
-    btns[i].classList.toggle('act',btns[i].getAttribute('data-mode')===mode);
-  }
-}
-for (var i=0;i<btns.length;i++){
-  btns[i].addEventListener('click',function(){
-    var m = this.getAttribute('data-mode');
-    if (m==='dnd'){ S.dndOn = !S.dndOn; updateDNDToggleFE(); }
-    setMode(m);
-    var tk = 'toast.'+ (m==='expanded'?'exp':m==='collapsed'?'col':m==='volume'?'vol':m==='brightness'?'bri':m==='media'?'med':m);
-    if (m==='dnd') tk = S.dndOn?'toast.dnd.on':'toast.dnd.off';
-    toast(t(tk));
-  });
-}
+var btns=document.querySelectorAll('#ctrlBar .ctrl-btn');
+function highlightCtrl(){for(var i=0;i<btns.length;i++)btns[i].classList.toggle('act',btns[i].getAttribute('data-mode')===mode);}
+for(var i=0;i<btns.length;i++)btns[i].addEventListener('click',function(){
+  var m=this.getAttribute('data-mode');
+  if(m==='dnd'){S.dndOn=!S.dndOn;updateDNDIcon();}
+  setMode(m);
+  var tk='toast.'+(m==='expanded'?'exp':m==='collapsed'?'col':m==='volume'?'vol':m==='brightness'?'bri':m==='media'?'med':m);
+  if(m==='dnd')tk=S.dndOn?'toast.dnd.on':'toast.dnd.off';
+  toast(t(tk));
+});
 
 // ===== FEATURE CARDS =====
-var cards = document.querySelectorAll('.feat-card');
-for (var i=0;i<cards.length;i++){
-  cards[i].addEventListener('click',function(){
-    var f = this.getAttribute('data-feat');
-    if (f==='i18n') return;
-    var demo = this.querySelector('.feat-demo');
-    if (demo){demo.classList.add('flash');setTimeout(function(){demo.classList.remove('flash')},500);}
-    if (f==='media'){S.playing=true;updatePlayText();}
-    if (f==='dnd'){S.dndOn=!S.dndOn;updateDNDToggleFE();updateDNDLabel();}
-    setMode(f);
-    document.getElementById('demo').scrollIntoView({behavior:'smooth'});
-  });
-}
+var cards=document.querySelectorAll('.feat-card');
+for(var i=0;i<cards.length;i++)cards[i].addEventListener('click',function(){
+  var f=this.getAttribute('data-feat');if(f==='i18n')return;
+  var mini=this.querySelector('.feat-mini');if(mini){mini.classList.add('flash');setTimeout(function(){mini.classList.remove('flash')},500);}
+  if(f==='media'){S.playing=true;updatePlayText();}
+  if(f==='dnd'){S.dndOn=!S.dndOn;updateDNDIcon();updateLabels();}
+  setMode(f);document.getElementById('demo').scrollIntoView({behavior:'smooth'});
+});
 
 // DND toggle
-document.querySelectorAll('[data-toggle]').forEach(function(el){
-  el.addEventListener('click',function(e){
-    e.stopPropagation();
-    S.dndOn = !S.dndOn;
-    this.classList.toggle('on',S.dndOn);
-    updateDNDLabel();
-    toast(S.dndOn?t('toast.dnd.on'):t('toast.dnd.off'));
-  });
-});
-function updateDNDToggleFE(){
-  var t = document.querySelector('[data-toggle="dnd"]');
-  if (t) t.classList.toggle('on',S.dndOn);
-}
+document.querySelectorAll('[data-toggle]').forEach(function(el){el.addEventListener('click',function(e){
+  e.stopPropagation();S.dndOn=!S.dndOn;this.classList.toggle('on',S.dndOn);updateLabels();updateDNDIcon();
+  toast(S.dndOn?t('toast.dnd.on'):t('toast.dnd.off'));
+});});
 
 // Sliders
-document.querySelectorAll('[data-slider]').forEach(function(el){
-  el.addEventListener('click',function(e){
-    e.stopPropagation();
-    var r = this.getBoundingClientRect();
-    var p = Math.round((e.clientX - r.left)/r.width*100);
-    var fill = this.querySelector('.f-slider-fill');
-    if (fill) fill.style.width = p+'%';
-    var type = this.getAttribute('data-slider');
-    if (type==='vol'){S.volume=p;var e2=document.getElementById('fVolPct');if(e2)e2.textContent=p+'%';}
-    if (type==='bri') S.brightness=p;
-    if (mode===type||mode==='volume'||mode==='brightness') renderIsland();
-  });
-});
-document.querySelectorAll('[data-range]').forEach(function(el){
-  el.addEventListener('input',function(e){
-    e.stopPropagation();
-    var v = parseInt(this.value);
-    var type = this.getAttribute('data-range');
-    var fill = document.querySelector('[data-slider="'+type+'"] .f-slider-fill');
-    if (fill) fill.style.width = v+'%';
-    if (type==='vol'){S.volume=v;var e2=document.getElementById('fVolPct');if(e2)e2.textContent=v+'%';}
-    if (type==='bri') S.brightness=v;
-    if (mode===type||mode==='volume'||mode==='brightness') renderIsland();
-  });
-  el.addEventListener('click',function(e){e.stopPropagation();});
-});
+document.querySelectorAll('[data-slider]').forEach(function(el){el.addEventListener('click',function(e){
+  e.stopPropagation();var r=this.getBoundingClientRect();var p=Math.round((e.clientX-r.left)/r.width*100);
+  var f=this.querySelector('.f-slider-fill');if(f)f.style.width=p+'%';
+  var ty=this.getAttribute('data-slider');
+  if(ty==='vol'){S.volume=p;var ee=document.getElementById('fVolPct');if(ee)ee.textContent=p+'%';}
+  if(ty==='bri')S.brightness=p;
+  if(mode===ty||mode==='volume'||mode==='brightness')render();
+});});
+document.querySelectorAll('[data-range]').forEach(function(el){el.addEventListener('input',function(e){
+  e.stopPropagation();var v=parseInt(this.value);var ty=this.getAttribute('data-range');
+  var f=document.querySelector('[data-slider="'+ty+'"] .f-slider-fill');if(f)f.style.width=v+'%';
+  if(ty==='vol'){S.volume=v;var ee=document.getElementById('fVolPct');if(ee)ee.textContent=v+'%';}
+  if(ty==='bri')S.brightness=v;
+  if(mode===ty||mode==='volume'||mode==='brightness')render();
+});el.addEventListener('click',function(e){e.stopPropagation();});});
 
-// Feature card buttons
-document.querySelectorAll('[data-act]').forEach(function(el){
-  el.addEventListener('click',function(e){
-    e.stopPropagation();
-    var a = this.getAttribute('data-act');
-    switch(a){
-      case 'play': S.playing=!S.playing;updatePlayText();toast(S.playing?t('toast.play'):t('toast.pause'));break;
-      case 'prev': toast(t('toast.prev'));break;
-      case 'next': toast(t('toast.next'));break;
-      case 'charger':
-        S.charging=!S.charging;
-        if(S.battery>80&&!S.charging)S.battery=Math.max(0,S.battery-5);
-        document.getElementById('fBattPct').textContent=S.battery+'%';
-        updateChargerBtn();
-        if(mode==='expanded'||mode==='battery')renderIsland();
-        toast(S.charging?t('toast.charger.on'):t('toast.charger.off'));
-        break;
-      case 'btToggle':
-        S.btConnected=!S.btConnected;updateBTLabel();
-        if(mode==='expanded'||mode==='connectivity')renderIsland();
-        toast(S.btConnected?t('toast.bt.on'):t('toast.bt.off'));
-        break;
-      case 'refresh':
-        S.cpu=Math.floor(Math.random()*35+10);S.gpu=Math.floor(Math.random()*30+5);
-        S.mem=Math.floor(Math.random()*25+30);S.cpuTemp=Math.floor(Math.random()*20+45);
-        S.gpuTemp=Math.floor(Math.random()*20+35);
-        document.getElementById('fCpu').textContent=S.cpu+'%';
-        document.getElementById('fGpu').textContent=S.gpu+'%';
-        document.getElementById('fMem').textContent=S.mem+'%';
-        document.getElementById('fTemp').textContent=S.cpuTemp+'°';
-        if(mode==='expanded')renderIsland();
-        if(mode==='collapsed')updateDots();
-        toast(t('toast.refresh'));
-        break;
-      case 'langZh': setLang('zh'); toast(t('toast.lang')); break;
-      case 'langEn': setLang('en'); toast(t('toast.lang')); break;
-    }
-  });
-});
+// Feature card action buttons
+document.querySelectorAll('[data-act]').forEach(function(el){el.addEventListener('click',function(e){
+  e.stopPropagation();var a=this.getAttribute('data-act');
+  switch(a){
+    case'play':S.playing=!S.playing;updatePlayText();toast(S.playing?t('toast.play'):t('toast.pause'));break;
+    case'prev':toast(t('toast.prev'));break;case'next':toast(t('toast.next'));break;
+    case'charger':S.charging=!S.charging;if(S.battery>80&&!S.charging)S.battery=Math.max(0,S.battery-5);
+      document.getElementById('fBattPct').textContent=S.battery+'%';updateLabels();
+      if(mode==='expanded'||mode==='battery')render();
+      toast(S.charging?t('toast.charger.on'):t('toast.charger.off'));break;
+    case'btToggle':S.btConnected=!S.btConnected;updateLabels();if(mode==='expanded')render();break;
+    case'refresh':S.cpu=Math.floor(Math.random()*35+10);S.gpu=Math.floor(Math.random()*30+5);
+      S.mem=Math.floor(Math.random()*25+30);S.cpuTemp=Math.floor(Math.random()*20+45);S.gpuTemp=Math.floor(Math.random()*20+35);
+      document.getElementById('fCpu').textContent=S.cpu+'%';document.getElementById('fGpu').textContent=S.gpu+'%';
+      document.getElementById('fMem').textContent=S.mem+'%';document.getElementById('fTemp').textContent=S.cpuTemp+'°';
+      updFeatDots();if(mode==='expanded')render();if(mode==='collapsed'||mode==='hovered')updDots();
+      toast(t('toast.refresh'));break;
+    case'langZh':setLang('zh');toast(t('toast.lang'));break;
+    case'langEn':setLang('en');toast(t('toast.lang'));break;
+  }
+});});
 
-function updatePlayText(){
-  var b = document.getElementById('fPlayBtn');
-  if (b) b.textContent = S.playing?'暂停':'播放';
+function updatePlayText(){var b=document.getElementById('fPlayBtn');if(b)b.textContent=S.playing?'暂停':'播放';}
+function updateLabels(){
+  updatePlayText();
+  var b=document.getElementById('fChargerBtn');if(b)b.textContent=S.charging?t('bat.unplug'):t('bat.plug');
+  var l=document.getElementById('fDndLabel');if(l)l.textContent=S.dndOn?t('d.on'):t('d.off');
+  var d=document.getElementById('fDndIcon');if(d)d.style.fill=S.dndOn?'#5856D6':'white';
+  var bl=document.getElementById('fBtLabel');if(bl)bl.textContent=S.btConnected?S.btDevice:t('c.disconnected');
+  var bd=document.getElementById('fBtDot');if(bd)bd.style.background=S.btConnected?'var(--green)':'var(--gray)';
+  var bi=document.getElementById('fBtIcon');if(bi)bi.querySelector('path').setAttribute('fill',S.btConnected?'#34C759':'#8E8E93');
 }
-function updateChargerBtn(){
-  var b = document.getElementById('fChargerBtn');
-  if (b) b.textContent = S.charging?t('feat.bat.unplug'):t('feat.bat.plug');
+function updateDNDIcon(){
+  var d=document.getElementById('fDndIcon');if(d)d.style.fill=S.dndOn?'#5856D6':'white';
+  var dm=document.getElementById('dndMoon');if(dm)dm.style.fill=S.dndOn?'#5856D6':'white';
 }
-function updateDNDLabel(){
-  var l = document.getElementById('fDndLabel');
-  if (l) l.textContent = S.dndOn?t('feat.dnd.on'):t('feat.dnd.off');
-}
-function updateBTLabel(){
-  var l = document.getElementById('fBtLabel');
-  if (l) l.textContent = S.btConnected?t('feat.bt.connected'):t('bt.disconnected');
-  var b = document.getElementById('fBtBtn');
-  if (b) b.textContent = S.btConnected?t('feat.bt.disc'):t('feat.bt.conn');
-  var d = document.getElementById('fBtDot');
-  if (d) d.style.background = S.btConnected?'var(--green)':'var(--gray)';
+function updFeatDots(){
+  var c=document.getElementById('fCpuDot'),m=document.getElementById('fMemDot');
+  if(c)c.className='mini-dot '+(S.cpu>80?'cpu-c':S.cpu>50?'cpu-w':'cpu-n');
+  if(m)m.className='mini-dot '+(S.mem>80?'mem-c':S.mem>60?'mem-w':'mem-n');
 }
 
 // ===== SETTINGS =====
-var setTabs = ['general','battery','connectivity','focus','display','sound','nowplaying'];
-var curSet = 'general';
-
-var setConf = {
-  general:{zh:[
-    {l:'set.launch',d:'set.launch.d',tp:'tog',v:true},
-    {l:'set.haptic',d:'set.haptic.d',tp:'tog',v:true},
-    {l:'set.fshover',d:'set.fshover.d',tp:'tog',v:false},
-    {l:'set.notch',d:'set.notch.d',tp:'sli',v:7,mn:4,mx:16,st:0.5},
-  ],en:[
-    {l:'set.launch',d:'set.launch.d',tp:'tog',v:true},
-    {l:'set.haptic',d:'set.haptic.d',tp:'tog',v:true},
-    {l:'set.fshover',d:'set.fshover.d',tp:'tog',v:false},
-    {l:'set.notch',d:'set.notch.d',tp:'sli',v:7,mn:4,mx:16,st:0.5},
-  ]},
-  battery:{zh:[
-    {l:'set.bat.enable',tp:'tog',v:true},{l:'set.bat.plug',tp:'tog',v:true},
-    {l:'set.bat.pct',tp:'tog',v:true},
-    {l:'set.bat.dwell',d:'set.bat.dwell.d',tp:'sli',v:3,mn:1,mx:10,st:0.5},
-    {l:'set.bat.low',d:'set.bat.low.d',tp:'sli',v:20,mn:5,mx:50,st:5},
-  ],en:[
-    {l:'set.bat.enable',tp:'tog',v:true},{l:'set.bat.plug',tp:'tog',v:true},
-    {l:'set.bat.pct',tp:'tog',v:true},
-    {l:'set.bat.dwell',d:'set.bat.dwell.d',tp:'sli',v:3,mn:1,mx:10,st:0.5},
-    {l:'set.bat.low',d:'set.bat.low.d',tp:'sli',v:20,mn:5,mx:50,st:5},
-  ]},
-  connectivity:{zh:[
-    {l:'set.bt.enable',tp:'tog',v:true},{l:'set.bt.name',tp:'tog',v:true},
-    {l:'set.bt.dwell',d:'set.bt.dwell.d',tp:'sli',v:3,mn:1,mx:10,st:0.5},
-  ],en:[
-    {l:'set.bt.enable',tp:'tog',v:true},{l:'set.bt.name',tp:'tog',v:true},
-    {l:'set.bt.dwell',d:'set.bt.dwell.d',tp:'sli',v:3,mn:1,mx:10,st:0.5},
-  ]},
-  focus:{zh:[
-    {l:'set.foc.enable',tp:'tog',v:true},
-    {l:'set.foc.dwell',d:'set.foc.dwell.d',tp:'sli',v:5,mn:1,mx:10,st:0.5},
-    {l:'set.foc.sound',d:'set.foc.sound.d',tp:'tog',v:false},
-    {l:'set.foc.hide',tp:'tog',v:false},
-  ],en:[
-    {l:'set.foc.enable',tp:'tog',v:true},
-    {l:'set.foc.dwell',d:'set.foc.dwell.d',tp:'sli',v:5,mn:1,mx:10,st:0.5},
-    {l:'set.foc.sound',d:'set.foc.sound.d',tp:'tog',v:false},
-    {l:'set.foc.hide',tp:'tog',v:false},
-  ]},
-  display:{zh:[
-    {l:'set.dis.enable',tp:'tog',v:true},
-    {l:'set.dis.dwell',d:'set.dis.dwell.d',tp:'sli',v:2,mn:1,mx:5,st:0.5},
-    {l:'set.dis.step',d:'set.dis.step.d',tp:'sli',v:6,mn:1,mx:32,st:1},
-  ],en:[
-    {l:'set.dis.enable',tp:'tog',v:true},
-    {l:'set.dis.dwell',d:'set.dis.dwell.d',tp:'sli',v:2,mn:1,mx:5,st:0.5},
-    {l:'set.dis.step',d:'set.dis.step.d',tp:'sli',v:6,mn:1,mx:32,st:1},
-  ]},
-  sound:{zh:[
-    {l:'set.snd.enable',tp:'tog',v:true},
-    {l:'set.snd.dwell',d:'set.snd.dwell.d',tp:'sli',v:2,mn:1,mx:5,st:0.5},
-    {l:'set.snd.step',d:'set.snd.step.d',tp:'sli',v:6,mn:1,mx:32,st:1},
-  ],en:[
-    {l:'set.snd.enable',tp:'tog',v:true},
-    {l:'set.snd.dwell',d:'set.snd.dwell.d',tp:'sli',v:2,mn:1,mx:5,st:0.5},
-    {l:'set.snd.step',d:'set.snd.step.d',tp:'sli',v:6,mn:1,mx:32,st:1},
-  ]},
-  nowplaying:{zh:[
-    {l:'set.np.enable',tp:'tog',v:true},{l:'set.np.art',tp:'tog',v:true},
-    {l:'set.np.prog',tp:'tog',v:true},
-    {l:'set.np.poll',d:'set.np.poll.d',tp:'sli',v:1,mn:0.5,mx:5,st:0.5},
-  ],en:[
-    {l:'set.np.enable',tp:'tog',v:true},{l:'set.np.art',tp:'tog',v:true},
-    {l:'set.np.prog',tp:'tog',v:true},
-    {l:'set.np.poll',d:'set.np.poll.d',tp:'sli',v:1,mn:0.5,mx:5,st:0.5},
-  ]}
+var tabs=['general','battery','connectivity','focus','display','sound','nowplaying'],cur='general';
+var conf={
+  general:{zh:[{l:'si.launch',d:'si.launch.d',tp:'tog',v:1},{l:'si.haptic',d:'si.haptic.d',tp:'tog',v:1},{l:'si.fshover',d:'si.fshover.d',tp:'tog',v:0},{l:'si.notch',d:'si.notch.d',tp:'sli',v:7,mn:4,mx:16,st:.5}],
+    en:[{l:'si.launch',d:'si.launch.d',tp:'tog',v:1},{l:'si.haptic',d:'si.haptic.d',tp:'tog',v:1},{l:'si.fshover',d:'si.fshover.d',tp:'tog',v:0},{l:'si.notch',d:'si.notch.d',tp:'sli',v:7,mn:4,mx:16,st:.5}]},
+  battery:{zh:[{l:'si.bat.e',tp:'tog',v:1},{l:'si.bat.p',tp:'tog',v:1},{l:'si.bat.pct',tp:'tog',v:1},{l:'si.bat.d',d:'si.bat.d.d',tp:'sli',v:3,mn:1,mx:10,st:.5},{l:'si.bat.l',d:'si.bat.l.d',tp:'sli',v:20,mn:5,mx:50,st:5}],
+    en:[{l:'si.bat.e',tp:'tog',v:1},{l:'si.bat.p',tp:'tog',v:1},{l:'si.bat.pct',tp:'tog',v:1},{l:'si.bat.d',d:'si.bat.d.d',tp:'sli',v:3,mn:1,mx:10,st:.5},{l:'si.bat.l',d:'si.bat.l.d',tp:'sli',v:20,mn:5,mx:50,st:5}]},
+  connectivity:{zh:[{l:'si.bt.e',tp:'tog',v:1},{l:'si.bt.n',tp:'tog',v:1},{l:'si.bt.d',d:'si.bt.d.d',tp:'sli',v:3,mn:1,mx:10,st:.5}],
+    en:[{l:'si.bt.e',tp:'tog',v:1},{l:'si.bt.n',tp:'tog',v:1},{l:'si.bt.d',d:'si.bt.d.d',tp:'sli',v:3,mn:1,mx:10,st:.5}]},
+  focus:{zh:[{l:'si.foc.e',tp:'tog',v:1},{l:'si.foc.d',d:'si.foc.d.d',tp:'sli',v:5,mn:1,mx:10,st:.5},{l:'si.foc.s',d:'si.foc.s.d',tp:'tog',v:0},{l:'si.foc.h',tp:'tog',v:0}],
+    en:[{l:'si.foc.e',tp:'tog',v:1},{l:'si.foc.d',d:'si.foc.d.d',tp:'sli',v:5,mn:1,mx:10,st:.5},{l:'si.foc.s',d:'si.foc.s.d',tp:'tog',v:0},{l:'si.foc.h',tp:'tog',v:0}]},
+  display:{zh:[{l:'si.dis.e',tp:'tog',v:1},{l:'si.dis.d',d:'si.dis.d.d',tp:'sli',v:2,mn:1,mx:5,st:.5},{l:'si.dis.st',tp:'sli',v:6,mn:1,mx:32,st:1}],
+    en:[{l:'si.dis.e',tp:'tog',v:1},{l:'si.dis.d',d:'si.dis.d.d',tp:'sli',v:2,mn:1,mx:5,st:.5},{l:'si.dis.st',tp:'sli',v:6,mn:1,mx:32,st:1}]},
+  sound:{zh:[{l:'si.snd.e',tp:'tog',v:1},{l:'si.snd.d',d:'si.snd.d.d',tp:'sli',v:2,mn:1,mx:5,st:.5},{l:'si.snd.st',tp:'sli',v:6,mn:1,mx:32,st:1}],
+    en:[{l:'si.snd.e',tp:'tog',v:1},{l:'si.snd.d',d:'si.snd.d.d',tp:'sli',v:2,mn:1,mx:5,st:.5},{l:'si.snd.st',tp:'sli',v:6,mn:1,mx:32,st:1}]},
+  nowplaying:{zh:[{l:'si.np.e',tp:'tog',v:1},{l:'si.np.a',tp:'tog',v:1},{l:'si.np.p',tp:'tog',v:1},{l:'si.np.i',d:'si.np.i.d',tp:'sli',v:1,mn:.5,mx:5,st:.5}],
+    en:[{l:'si.np.e',tp:'tog',v:1},{l:'si.np.a',tp:'tog',v:1},{l:'si.np.p',tp:'tog',v:1},{l:'si.np.i',d:'si.np.i.d',tp:'sli',v:1,mn:.5,mx:5,st:.5}]}
 };
-
 function renderSettings(){
-  var side = document.getElementById('setSide');
-  var main = document.getElementById('setMain');
-  var sh = '';
-  for (var i=0;i<setTabs.length;i++){
-    sh += '<div class="set-side-item'+(setTabs[i]===curSet?' sel':'')+'" data-stab="'+setTabs[i]+'">'+t('set.'+setTabs[i])+'</div>';
-  }
-  side.innerHTML = sh;
-  var sits = side.querySelectorAll('.set-side-item');
-  for (var i=0;i<sits.length;i++){
-    sits[i].addEventListener('click',function(){
-      curSet = this.getAttribute('data-stab');
-      renderSettings();
-    });
-  }
-
-  var conf = (setConf[curSet]||setConf.general)[L]||setConf.general.en;
-  var mh = '';
-  for (var i=0;i<conf.length;i++){
-    var c = conf[i];
-    mh += '<div class="set-row"><div><div class="set-row-lbl">'+t(c.l)+'</div>';
-    if (c.d) mh += '<div class="set-row-sub">'+t(c.d)+'</div>';
-    mh += '</div>';
-    if (c.tp==='tog'){
-      mh += '<div class="f-toggle'+(c.v?' on':'')+'" data-stog="'+i+'"></div>';
-    } else if (c.tp==='sli'){
-      mh += '<input type="range" min="'+c.mn+'" max="'+c.mx+'" step="'+c.st+'" value="'+c.v+'" class="set-slider" data-ssli="'+i+'">';
-    }
-    mh += '</div>';
-  }
-  main.innerHTML = mh;
-
+  var side=document.getElementById('setSide'),main=document.getElementById('setMain');
+  var sh='';for(var i=0;i<tabs.length;i++)sh+='<div class="set-item'+(tabs[i]===cur?' sel':'')+'" data-st="'+tabs[i]+'">'+t('set.'+tabs[i])+'</div>';
+  side.innerHTML=sh;var its=side.querySelectorAll('.set-item');
+  for(var i=0;i<its.length;i++)its[i].addEventListener('click',function(){cur=this.getAttribute('data-st');renderSettings();});
+  var cd=(conf[cur]||conf.general)[L]||conf.general.en,mh='';
+  for(var i=0;i<cd.length;i++){var c=cd[i];mh+='<div class="set-row"><div><div class="set-row-lbl">'+t(c.l)+'</div>';
+    if(c.d)mh+='<div class="set-row-sub">'+t(c.d)+'</div>';mh+='</div>';
+    if(c.tp==='tog')mh+='<div class="f-toggle'+(c.v?' on':'')+'" data-stog="'+i+'"></div>';
+    else if(c.tp==='sli')mh+='<input type="range" min="'+c.mn+'" max="'+c.mx+'" step="'+c.st+'" value="'+c.v+'" class="set-slider" data-ssli="'+i+'">';
+    mh+='</div>';}
+  main.innerHTML=mh;
   setTimeout(function(){
-    var togs = main.querySelectorAll('[data-stog]');
-    for (var i=0;i<togs.length;i++){
-      togs[i].addEventListener('click',function(){this.classList.toggle('on');toast(t('toast.set'))});
-    }
-    var slis = main.querySelectorAll('[data-ssli]');
-    for (var i=0;i<slis.length;i++){
-      slis[i].addEventListener('input',function(){toast(t('toast.set')+': '+this.value)});
-    }
+    var togs=main.querySelectorAll('[data-stog]');for(var i=0;i<togs.length;i++)togs[i].addEventListener('click',function(){this.classList.toggle('on');toast(t('toast.set'))});
+    var slis=main.querySelectorAll('[data-ssli]');for(var i=0;i<slis.length;i++)slis[i].addEventListener('input',function(){toast(t('toast.set')+': '+this.value)});
   },0);
 }
 
-// ===== SCROLL REVEAL =====
+// ===== SCROLL =====
 function initScroll(){
-  var obs = new IntersectionObserver(function(es){
-    for(var i=0;i<es.length;i++){if(es[i].isIntersecting)es[i].target.classList.add('seen');}
-  },{threshold:.12});
-  document.querySelectorAll('.feat-card,.inst-card,.set-demo,.mac').forEach(function(el){
-    el.classList.add('sr');obs.observe(el);
-  });
-  setTimeout(function(){
-    document.querySelectorAll('.sr').forEach(function(el){
-      if(el.getBoundingClientRect().top<window.innerHeight)el.classList.add('seen');
-    });
-  },400);
+  var obs=new IntersectionObserver(function(es){for(var i=0;i<es.length;i++)if(es[i].isIntersecting)es[i].target.classList.add('seen');},{threshold:.12});
+  document.querySelectorAll('.feat-card,.inst-card,.set-demo,.mac').forEach(function(el){el.classList.add('sr');obs.observe(el);});
+  setTimeout(function(){document.querySelectorAll('.sr').forEach(function(el){if(el.getBoundingClientRect().top<window.innerHeight)el.classList.add('seen');})},400);
 }
 
-// ===== LIVE UPDATES =====
-function liveUpdate(){
-  S.cpu = Math.floor(Math.random()*30+12);
-  S.mem = Math.floor(Math.random()*22+33);
-  S.cpuTemp = Math.floor(Math.random()*18+48);
+// ===== LIVE UPDATE =====
+function live(){
+  S.cpu=Math.floor(Math.random()*30+12);S.mem=Math.floor(Math.random()*22+33);S.cpuTemp=Math.floor(Math.random()*18+48);
   var fc=document.getElementById('fCpu'),fm=document.getElementById('fMem'),ft=document.getElementById('fTemp');
   if(fc)fc.textContent=S.cpu+'%';if(fm)fm.textContent=S.mem+'%';if(ft)ft.textContent=S.cpuTemp+'°';
-  if(mode==='collapsed')updateDots();
-  if(mode==='expanded')renderIsland();
+  if(mode==='collapsed'||mode==='hovered')updDots();updFeatDots();
+  if(mode==='expanded')render();
 }
 
 // ===== INIT =====
-function init(){
-  renderIsland();
-  renderSettings();
-  initScroll();
-  setInterval(liveUpdate,3500);
-}
-if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
-else{init();}
-
+function init(){render();renderSettings();initScroll();updFeatDots();setInterval(live,3500);}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
 
