@@ -3,374 +3,484 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LilyAisland — Dynamic Island for Mac</title>
-<meta name="description" content="LilyAisland brings iPhone Dynamic Island experience to your Mac. A floating pill-shaped widget for system monitoring, media control, and quick actions.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='8' width='24' height='16' rx='8' fill='%23000' stroke='%23555' stroke-width='1'/%3E%3Ccircle cx='11' cy='16' r='2' fill='%235e9eff'/%3E%3Ccircle cx='21' cy='16' r='2' fill='%2322c55e'/%3E%3C/svg%3E">
+<title>LilyAisland — Mac 灵动岛</title>
+<meta name="description" content="LilyAisland 将 iPhone 灵动岛体验带到 Mac。悬浮在屏幕顶部的交互式胶囊控件。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='4' y='8' width='24' height='16' rx='8' fill='%23000'/%3E%3Ccircle cx='12' cy='16' r='2.5' fill='%23007AFF'/%3E%3Ccircle cx='20' cy='16' r='2.5' fill='%2334C759'/%3E%3C/svg%3E">
 <style>
-/* ===== RESET ===== */
+/* ============================================================
+   DESIGN TOKENS — exact from LilyAisland source
+   ============================================================ */
+:root {
+  /* Colors — SwiftUI system colors */
+  --black: #000000;
+  --gray: #8E8E93;
+  --gray2: #98989D;
+  --white: #FFFFFF;
+  --red: #FF3B30;
+  --orange: #FF9500;
+  --yellow: #FFCC00;
+  --green: #34C759;
+  --blue: #007AFF;
+  --indigo: #5856D6;
+  --purple: #AF52DE;
+  --gray03: rgba(142,142,147,0.3);
+  --gray05: rgba(142,142,147,0.5);
+  --white01: rgba(255,255,255,0.1);
+  --white06: rgba(255,255,255,0.06);
+  --white04: rgba(255,255,255,0.04);
+  --bg: #0A0A0A;
+  --surface: #1A1A1E;
+  --surface2: #1E1E22;
+  --border: rgba(255,255,255,0.07);
+
+  /* Dimensions — exact from IslandState */
+  --collapsed-w: 180px; --collapsed-h: 32px;
+  --collapsed-media-w: 260px; --collapsed-media-h: 34px;
+  --hovered-w: 203px; --hovered-h: 36px;
+  --hovered-media-w: 268px; --hovered-media-h: 38px;
+  --expanded-w: 500px; --expanded-media-h: 200px; --expanded-nomedia-h: 130px;
+  --hud-w: 360px; --hud-h: 34px;
+  --notch-radius: 7px;
+
+  /* Animations — exact spring parameters */
+  --spring-mode: cubic-bezier(0.25, 0.0, 0.25, 1.0);   /* response 0.4, damping 1.0 */
+  --spring-hover: cubic-bezier(0.37, 0.0, 0.21, 1.0);   /* response 0.32, damping 1.0 */
+  --spring-tap: cubic-bezier(0.34, 0.0, 0.09, 1.0);     /* response 0.4, damping 0.75 */
+  --spring-bar: cubic-bezier(0.4, 0.0, 0.1, 1.0);       /* response 0.3, damping 0.7 */
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;font-size:16px}
-body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',system-ui,sans-serif;background:#0a0a0a;color:#f5f5f7;line-height:1.6;overflow-x:hidden}
-a{color:#5e9eff;text-decoration:none;transition:color .2s}
-a:hover{color:#8bb9ff}
-.container{max-width:1100px;margin:0 auto;padding:0 24px}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;background:var(--bg);color:var(--white);line-height:1.5;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none;transition:color .2s}
+a:hover{opacity:.85}
+.container{max-width:1120px;margin:0 auto;padding:0 24px}
 
-/* ===== NAVBAR ===== */
-.nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,10,.85);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid rgba(255,255,255,.08);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
-.nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.1rem;color:#fff}
-.nav-logo{width:28px;height:28px;border-radius:8px;background:#000;border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;gap:3px}
-.nav-logo .dot{width:4px;height:4px;border-radius:50%}
-.nav-logo .dot.c{background:#5e9eff}
-.nav-logo .dot.m{background:#22c55e}
-.nav-links{display:flex;align-items:center;gap:4px}
-.nav-links a,.nav-links button{color:#a1a1aa;padding:6px 14px;border-radius:8px;font-size:.88rem;transition:all .2s;border:none;background:none;cursor:pointer;font-family:inherit}
-.nav-links a:hover,.nav-links button:hover{color:#fff;background:rgba(255,255,255,.06)}
-.nav-links .nav-gh{background:linear-gradient(135deg,#5e9eff,#7c5cff);color:#fff;font-weight:600;padding:7px 16px}
-.nav-links .nav-gh:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 16px rgba(94,158,255,.3);color:#fff}
-.lang-sw{display:flex;background:rgba(255,255,255,.06);border-radius:8px;padding:2px;margin-left:8px}
-.lang-sw button{padding:5px 12px;border:none;background:none;color:#a1a1aa;cursor:pointer;font-size:.8rem;font-weight:500;transition:all .2s;border-radius:6px;font-family:inherit}
-.lang-sw button.on{background:rgba(255,255,255,.12);color:#fff}
+/* ============================================================
+   NAV
+   ============================================================ */
+.nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,10,.85);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.1rem}
+.nav-icon{width:28px;height:28px;border-radius:7px;background:var(--black);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;gap:3px}
+.nav-icon i{width:4px;height:4px;border-radius:50%;display:block}
+.nav-icon i.c{background:var(--blue)}.nav-icon i.m{background:var(--green)}
+.nav-links{display:flex;align-items:center;gap:2px}
+.nav-links a,.nav-links button{color:var(--gray);padding:6px 14px;border-radius:8px;font-size:.85rem;transition:all .2s;border:none;background:none;cursor:pointer;font-family:inherit}
+.nav-links a:hover,.nav-links button:hover{color:var(--white);background:var(--white06)}
+.nav-links a.gh{background:var(--blue);color:var(--white);font-weight:600;padding:7px 16px;border-radius:8px}
+.nav-links a.gh:hover{opacity:.9;color:var(--white)}
+.lang-sw{display:flex;background:var(--white06);border-radius:8px;padding:2px;margin-left:6px}
+.lang-sw button{padding:5px 12px;border:none;background:none;color:var(--gray);cursor:pointer;font-size:.8rem;font-weight:500;transition:all .2s;border-radius:6px;font-family:inherit}
+.lang-sw button.on{background:rgba(255,255,255,.12);color:var(--white)}
 
-/* ===== HERO ===== */
-.hero{padding:120px 0 80px;text-align:center;position:relative}
-.hero::before{content:'';position:absolute;top:-200px;left:50%;transform:translateX(-50%);width:600px;height:600px;background:radial-gradient(circle,rgba(94,158,255,.06) 0%,transparent 60%);pointer-events:none}
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero{padding:120px 0 80px;text-align:center}
 .hero h1{font-size:3.6rem;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:16px}
-.hero .grad{background:linear-gradient(135deg,#fff 0%,#a1a1aa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hero p.desc{font-size:1.2rem;color:#a1a1aa;max-width:600px;margin:0 auto 36px;line-height:1.7}
+.hero h1 span{background:linear-gradient(180deg,var(--white) 0%,var(--gray) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .sub{font-size:1.2rem;color:var(--gray);max-width:620px;margin:0 auto 36px;line-height:1.7}
 .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 .btn{padding:12px 28px;border-radius:10px;font-weight:600;font-size:.95rem;cursor:pointer;transition:all .25s;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:8px}
-.btn-p{background:linear-gradient(135deg,#5e9eff,#7c5cff);color:#fff;font-size:1rem;padding:14px 32px;box-shadow:0 4px 24px rgba(94,158,255,.25)}
-.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(94,158,255,.35)}
-.btn-o{background:rgba(255,255,255,.06);color:#e4e4e7;border:1px solid rgba(255,255,255,.12)}
-.btn-o:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)}
+.btn-p{background:var(--blue);color:var(--white);font-size:1rem;padding:14px 32px;box-shadow:0 4px 20px rgba(0,122,255,.2)}
+.btn-p:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,122,255,.3)}
+.btn-o{background:var(--white06);color:#E4E4E7;border:1px solid rgba(255,255,255,.12)}
+.btn-o:hover{background:rgba(255,255,255,.1)}
 
-/* ===== DEMO ===== */
-.demo-section{padding:20px 0 60px}
-.mac-frame{max-width:900px;margin:0 auto;background:#1a1a1e;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 60px rgba(0,0,0,.5)}
-.mac-top{height:36px;background:#1e1e22;display:flex;align-items:center;padding:0 16px;gap:8px;border-bottom:1px solid rgba(255,255,255,.06)}
+/* ============================================================
+   DEMO SECTION
+   ============================================================ */
+.demo-sec{padding:20px 0 60px}
+.mac{max-width:900px;margin:0 auto;background:var(--surface);border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.mac-top{height:36px;background:var(--surface2);display:flex;align-items:center;padding:0 16px;gap:8px;border-bottom:1px solid rgba(255,255,255,.05)}
 .mac-dot{width:11px;height:11px;border-radius:50%}
-.mac-dot.r{background:#ff5f57}.mac-dot.y{background:#febc2e}.mac-dot.g{background:#28c840}
-.mac-screen{position:relative;height:420px;background:radial-gradient(ellipse at 50% 0%,rgba(94,158,255,.06) 0%,transparent 50%),linear-gradient(180deg,#12121a 0%,#0d0d14 100%);display:flex;align-items:flex-start;justify-content:center;overflow:hidden}
-.mac-screen .bg-hint{position:absolute;bottom:20px;font-size:.75rem;color:rgba(255,255,255,.1);pointer-events:none}
+.mac-dot.r{background:#FF5F57}.mac-dot.y{background:#FEBC2E}.mac-dot.g{background:#28C840}
+.mac-screen{position:relative;height:420px;background:radial-gradient(ellipse at 50% 0%,rgba(0,122,255,.05) 0%,transparent 50%),linear-gradient(180deg,#12121A 0%,#0D0D14 100%);display:flex;flex-direction:column;align-items:center;overflow:hidden}
+.mac-screen .wallpaper{position:absolute;bottom:20px;font-size:.72rem;color:rgba(255,255,255,.08);pointer-events:none}
 
-/* ISLAND */
-.island-wrap{position:relative;margin-top:8px;z-index:10;display:flex;flex-direction:column;align-items:center}
-.island-notch{width:100%;height:7px;position:relative;z-index:2;display:flex;justify-content:space-between;pointer-events:none}
-.island-notch::before,.island-notch::after{content:'';width:14px;height:7px;background:#0d0d14;border-radius:0 0 7px 0}
-.island-notch::after{border-radius:0 0 0 7px}
-.island{background:#000;border:1px solid rgba(255,255,255,.1);border-radius:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .45s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;box-shadow:0 6px 30px rgba(0,0,0,.5);z-index:1}
-.island.s0{width:180px;height:34px}
-.island.s1{width:270px;height:40px;border-radius:26px}
-.island.s2{width:520px;height:200px;border-radius:32px;cursor:default}
-.island.sv{width:360px;height:36px;border-radius:22px}
-.island.sb{width:360px;height:36px;border-radius:22px}
-.island.sd{width:280px;height:36px;border-radius:22px}
-.island.sbatt{width:300px;height:36px;border-radius:22px}
-.island.sconn{width:300px;height:36px;border-radius:22px}
+/* ---- Island wrapper ---- */
+.island-stage{position:relative;margin-top:8px;z-index:10;display:flex;flex-direction:column;align-items:center}
 
-/* Island inner content */
-.island-inner{display:flex;align-items:center;gap:10px;padding:0 20px;width:100%;justify-content:center}
-.dot-row{display:flex;gap:8px;align-items:center}
-.dot{width:7px;height:7px;border-radius:50%;transition:background .5s}
-.dot.cpu-d{background:#5e9eff}.dot.cpu-d.warn{background:#f59e0b}.dot.cpu-d.crit{background:#ef4444}
-.dot.mem-d{background:#22c55e}.dot.mem-d.warn{background:#f59e0b}.dot.mem-d.crit{background:#ef4444}
+/* Notch flare — SVG-based, matches source bezier curve */
+.notch-flare{position:absolute;top:0;width:calc(var(--expanded-w) + 2px);height:var(--notch-radius);z-index:3;pointer-events:none;display:flex;justify-content:space-between;left:50%;transform:translateX(-50%)}
+.notch-flare svg{display:block;width:var(--notch-radius);height:var(--notch-radius)}
+.island-stage.collapsed .notch-flare{opacity:0}
+.island-stage.hovered .notch-flare,
+.island-stage.hud .notch-flare{width:calc(var(--hud-w) + 2px)}
+.island-stage.media-collapsed .notch-flare{width:calc(var(--collapsed-media-w) + 2px)}
+.island-stage.media-hovered .notch-flare{width:calc(var(--hovered-media-w) + 2px)}
+.island-stage.expanded .notch-flare{width:calc(var(--expanded-w) + 2px)}
 
-.stat-txt{font-size:.7rem;color:rgba(255,255,255,.65);font-weight:500;white-space:nowrap}
+/* ---- ISLAND pill ---- */
+.island{position:relative;z-index:2;background:var(--black);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:width .45s var(--spring-mode),height .45s var(--spring-mode),border-radius .45s var(--spring-mode);box-shadow:0 8px 40px rgba(0,0,0,.5);overflow:visible}
+/* default = collapsed no media */
+.island{width:var(--collapsed-w);height:var(--collapsed-h);border-radius:calc(var(--collapsed-h)/2)}
 
-/* Expanded dashboard */
-.exp-panel{display:none;width:100%;padding:16px 20px;flex-direction:column}
-.s2 .exp-panel{display:flex}
-.s2 .island-inner{display:none}
-.exp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
-.exp-card{background:rgba(255,255,255,.035);border-radius:12px;padding:10px 12px;text-align:center;border:1px solid rgba(255,255,255,.04)}
-.exp-card .ec-icon{font-size:1rem;margin-bottom:2px;opacity:.8}
-.exp-card .ec-val{font-size:1.05rem;font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
-.exp-card .ec-lbl{font-size:.65rem;color:rgba(255,255,255,.35);margin-top:1px}
-.exp-card .ec-sub{font-size:.68rem;color:rgba(255,255,255,.4);margin-top:1px}
+/* Border line — separate element so it animates with the island */
+.island::after{content:'';position:absolute;inset:0;border-radius:inherit;border:1px solid rgba(255,255,255,.08);pointer-events:none;z-index:10}
 
-/* Media player in expanded */
-.media-row{display:flex;align-items:center;gap:16px;width:100%}
-.media-art{width:68px;height:68px;border-radius:14px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:1.8rem;box-shadow:0 8px 24px rgba(0,0,0,.4);flex-shrink:0}
-.media-info{flex:1;text-align:center}
-.media-song{font-size:.95rem;font-weight:700;color:#fff}
-.media-artist{font-size:.75rem;color:rgba(255,255,255,.4);margin-top:2px}
-.media-prog{width:100%;height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:8px;overflow:hidden}
-.media-prog-bar{height:100%;background:#5e9eff;border-radius:2px;transition:width .1s}
-.media-ctrls{display:flex;gap:18px;align-items:center;margin-top:8px}
-.media-btn{background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1rem;padding:5px;border-radius:50%;transition:all .15s}
-.media-btn:hover{color:#fff;background:rgba(255,255,255,.06)}
-.media-btn.play{font-size:1.3rem;color:#fff}
+/* ---- Island content area ---- */
+.island-body{position:relative;z-index:5;width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:0 14px}
 
-/* HUD bar style */
-.hud-icon{margin-right:8px;opacity:.85}
-.hud-bar-track{flex:1;height:4px;background:rgba(255,255,255,.12);border-radius:2px;max-width:220px;overflow:hidden}
-.hud-bar-fill{height:100%;background:#5e9eff;border-radius:2px;transition:width .2s}
-.hud-bar-fill.bri{background:#f59e0b}
-.hud-pct{font-size:.78rem;color:rgba(255,255,255,.65);margin-left:10px;min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
-.hud-label{font-size:.78rem;color:rgba(255,255,255,.65);margin-left:8px}
+/* ---- Dots (collapsed no media) ---- */
+.island-dots{display:flex;gap:10px;align-items:center}
+.island-dot{width:7px;height:7px;border-radius:50%;transition:background .5s}
+.island-dot.cpu-normal{background:var(--blue)}
+.island-dot.cpu-warn{background:var(--yellow)}
+.island-dot.cpu-crit{background:var(--red)}
+.island-dot.mem-normal{background:var(--green)}
+.island-dot.mem-warn{background:var(--yellow)}
+.island-dot.mem-crit{background:var(--red)}
 
-/* Demo buttons */
+/* ---- Labels (hovered no media) ---- */
+.island-labels{display:flex;gap:8px;align-items:center}
+.island-label{font-size:.7rem;color:var(--gray);font-weight:500;white-space:nowrap;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif}
+
+/* ---- HUD content ---- */
+.hud-icon{flex-shrink:0;margin-right:10px;display:flex;align-items:center;justify-content:center}
+.hud-icon svg{width:18px;height:18px;fill:var(--white)}
+.hud-track{flex:1;height:4px;background:var(--gray03);border-radius:2px;max-width:200px;overflow:hidden}
+.hud-fill{height:100%;background:var(--white);border-radius:2px;transition:width .3s var(--spring-bar)}
+.hud-fill.bri{background:var(--white)}
+.hud-pct{font-size:.78rem;color:var(--gray);margin-left:10px;min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
+.hud-label{font-size:.8rem;color:var(--gray);margin-left:8px;font-weight:500}
+.hud-label.indigo{color:var(--white);background:var(--indigo);padding:2px 12px;border-radius:10px;font-size:.75rem;font-weight:700}
+.hud-label.off{color:var(--gray);background:rgba(255,255,255,.1);padding:2px 12px;border-radius:10px;font-size:.75rem;font-weight:700}
+
+/* ---- Expanded dashboard (no media) ---- */
+.exp-panel{display:none;width:100%;height:100%;padding:22px 32px;flex-direction:column;gap:12px}
+.exp-panel .row1{display:flex;align-items:center;gap:10px}
+.exp-panel .row1 .bat-icon{margin-right:4px}
+.exp-panel .row1 .pwr-text{font-size:.85rem;font-weight:700;color:var(--gray)}
+.exp-panel .row1 .pct-text{font-size:1rem;font-weight:600;color:var(--white);margin-left:auto;font-variant-numeric:tabular-nums}
+.exp-panel .row1 .pct-text.charging{color:var(--green)}
+.exp-panel .row2{display:flex;gap:18px}
+.exp-panel .stat-col{display:flex;flex-direction:column;gap:2px}
+.exp-panel .stat-label{font-size:.65rem;color:var(--gray);font-weight:500}
+.exp-panel .stat-val{font-size:.8rem;font-weight:500;color:var(--white);font-variant-numeric:tabular-nums}
+.exp-panel .stat-sub{font-size:.65rem;color:var(--gray);font-variant-numeric:tabular-nums}
+.exp-panel .bt-col{flex:1;display:flex;flex-direction:column;gap:2px}
+
+/* ---- Media player expanded ---- */
+.media-exp{display:none;width:100%;height:100%;padding:32px 32px 24px;flex-direction:column;gap:16px}
+.media-exp .m-row1{display:flex;align-items:center;gap:16px}
+.media-exp .art{width:64px;height:64px;border-radius:14px;background:linear-gradient(135deg,rgba(175,82,222,.8),rgba(0,122,255,.6));display:flex;align-items:center;justify-content:center;color:var(--white);font-size:1.6rem;box-shadow:0 4px 16px rgba(0,0,0,.4);flex-shrink:0}
+.media-exp .track-info{flex:1;display:flex;flex-direction:column;gap:4px}
+.media-exp .song{font-size:1.1rem;font-weight:700;color:var(--white)}
+.media-exp .artist{font-size:.95rem;color:var(--gray)}
+.media-exp .eq-bars{display:flex;gap:2px;align-items:flex-end;height:24px}
+.media-exp .eq-bar{width:3px;background:var(--purple);border-radius:2px;animation:eq-bounce ease-in-out infinite}
+.media-exp .eq-bar:nth-child(1){animation-duration:.4s;height:10px}
+.media-exp .eq-bar:nth-child(2){animation-duration:.3s;height:16px}
+.media-exp .eq-bar:nth-child(3){animation-duration:.5s;height:8px}
+.media-exp .eq-bar:nth-child(4){animation-duration:.35s;height:14px}
+@keyframes eq-bounce{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
+.media-exp .m-row2{display:flex;align-items:center;gap:10px}
+.media-exp .time{font-size:.75rem;color:var(--gray);font-variant-numeric:tabular-nums;width:34px;text-align:right}
+.media-exp .time.end{text-align:left;width:38px}
+.media-exp .prog-track{flex:1;height:5px;background:var(--gray03);border-radius:3px;overflow:hidden}
+.media-exp .prog-fill{height:100%;background:var(--white);border-radius:3px;width:45%;transition:width .1s linear}
+.media-exp .m-row3{display:flex;align-items:center;justify-content:center;gap:42px}
+.media-exp .ctrl-btn{background:none;border:none;color:var(--white);cursor:pointer;padding:4px;border-radius:50%;transition:all .15s;font-size:1.1rem;opacity:.85}
+.media-exp .ctrl-btn:hover{opacity:1;background:rgba(255,255,255,.06)}
+.media-exp .ctrl-btn.play-btn{font-size:1.5rem}
+.media-exp .ctrl-btn:active{transform:scale(.85)}
+
+/* Collapsed media */
+.media-collapsed{display:flex;align-items:center;gap:8px;padding:0 14px;width:100%}
+.media-collapsed .art-sm{width:24px;height:24px;border-radius:6px;background:linear-gradient(135deg,rgba(175,82,222,.8),rgba(0,122,255,.6));flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--white);font-size:.55rem}
+.media-collapsed .eq-bars-sm{display:flex;gap:1.5px;align-items:flex-end;height:12px;margin-left:auto}
+.media-collapsed .eq-bar-sm{width:2.5px;background:var(--purple);border-radius:1.5px;animation:eq-bounce-sm ease-in-out infinite}
+.media-collapsed .eq-bar-sm:nth-child(1){animation-duration:.4s;height:2px}
+.media-collapsed .eq-bar-sm:nth-child(2){animation-duration:.3s;height:4px}
+.media-collapsed .eq-bar-sm:nth-child(3){animation-duration:.5s;height:2px}
+.media-collapsed .eq-bar-sm:nth-child(4){animation-duration:.35s;height:4px}
+@keyframes eq-bounce-sm{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+
+/* ============================================================
+   DEMO CONTROLS
+   ============================================================ */
 .ctrl-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:20px;max-width:900px;margin:0 auto}
-.ctrl-btn{padding:7px 15px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:#a1a1aa;cursor:pointer;font-size:.8rem;font-weight:500;transition:all .2s;font-family:inherit}
-.ctrl-btn:hover{border-color:rgba(255,255,255,.18);color:#e4e4e7;background:rgba(255,255,255,.05)}
-.ctrl-btn.act{background:rgba(94,158,255,.12);border-color:rgba(94,158,255,.25);color:#5e9eff}
-.ctrl-hint{text-align:center;font-size:.78rem;color:rgba(255,255,255,.25);margin-top:4px}
+.ctrl-btn{padding:7px 15px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);color:var(--gray);cursor:pointer;font-size:.8rem;font-weight:500;transition:all .2s;font-family:inherit}
+.ctrl-btn:hover{border-color:rgba(255,255,255,.18);color:var(--white);background:rgba(255,255,255,.05)}
+.ctrl-btn.act{background:rgba(0,122,255,.12);border-color:rgba(0,122,255,.25);color:var(--blue)}
+.ctrl-hint{text-align:center;font-size:.75rem;color:rgba(255,255,255,.2);margin-top:4px}
 
-/* ===== FEATURES ===== */
+/* ============================================================
+   FEATURES
+   ============================================================ */
 .sec{padding:80px 0}
 .sec-head{text-align:center;margin-bottom:56px}
-.sec-head h2{font-size:2.4rem;font-weight:700;letter-spacing:-.02em;color:#fff;margin-bottom:10px}
-.sec-head p{font-size:1.05rem;color:#a1a1aa;max-width:560px;margin:0 auto}
+.sec-head h2{font-size:2.4rem;font-weight:700;letter-spacing:-.02em;color:var(--white);margin-bottom:10px}
+.sec-head .sub{font-size:1.05rem;color:var(--gray);max-width:560px;margin:0 auto}
 .feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:18px}
-.feat-card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:24px;transition:all .3s;cursor:pointer}
+.feat-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:24px;transition:all .3s;cursor:pointer}
 .feat-card:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
 .feat-card:active{transform:scale(.98)}
-.feat-card h3{font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:6px}
-.feat-card p.desc{font-size:.84rem;color:rgba(255,255,255,.5);line-height:1.6;margin-bottom:14px}
-.feat-demo{padding:12px 14px;background:rgba(0,0,0,.2);border-radius:10px;border:1px solid rgba(255,255,255,.03);min-height:44px;display:flex;align-items:center;gap:10px;transition:all .3s}
-.feat-demo.flash{background:rgba(94,158,255,.07);border-color:rgba(94,158,255,.12)}
-.feat-demo .fd-text{font-size:.78rem;color:rgba(255,255,255,.45);transition:color .3s}
-.feat-demo.flash .fd-text{color:#5e9eff}
+.feat-card h3{font-size:1.05rem;font-weight:700;color:var(--white);margin-bottom:6px}
+.feat-card .desc{font-size:.84rem;color:rgba(255,255,255,.45);line-height:1.6;margin-bottom:14px}
+.feat-demo{padding:14px;background:rgba(0,0,0,.2);border-radius:10px;border:1px solid rgba(255,255,255,.03);min-height:44px;display:flex;align-items:center;gap:10px;transition:all .3s}
+.feat-demo.flash{background:rgba(0,122,255,.06);border-color:rgba(0,122,255,.1)}
 .f-toggle{width:42px;height:24px;border-radius:12px;background:rgba(255,255,255,.15);cursor:pointer;position:relative;transition:background .3s;flex-shrink:0}
-.f-toggle.on{background:#22c55e}
-.f-toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .3s}
+.f-toggle.on{background:var(--green)}
+.f-toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--white);transition:transform .3s}
 .f-toggle.on::after{transform:translateX(18px)}
-.f-btn{padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#ccc;cursor:pointer;font-size:.76rem;transition:all .15s;font-family:inherit;white-space:nowrap}
-.f-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+.f-btn{padding:5px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--gray);cursor:pointer;font-size:.76rem;transition:all .15s;font-family:inherit;white-space:nowrap}
+.f-btn:hover{background:rgba(255,255,255,.08);color:var(--white)}
 .f-btn:active{transform:scale(.95)}
-.f-slider{width:100px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;cursor:pointer;position:relative;flex-shrink:0}
-.f-slider-fill{height:100%;border-radius:2px;transition:width .15s}
-.f-slider-fill.vol{background:linear-gradient(90deg,#5e9eff,#7c5cff)}
-.f-slider-fill.bri{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.f-slider{width:100px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;cursor:pointer;flex-shrink:0;overflow:hidden}
+.f-slider-fill{height:100%;border-radius:2px;transition:width .3s var(--spring-bar)}
+.f-slider-fill.vol{background:var(--white)}.f-slider-fill.bri{background:var(--white)}
 .f-row{display:flex;align-items:center;gap:8px;flex:1}
 
-/* ===== SETTINGS ===== */
-.set-demo{max-width:700px;margin:0 auto;background:#1a1a1e;border-radius:14px;border:1px solid rgba(255,255,255,.06);overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.4)}
-.set-top{background:#1e1e22;padding:12px 18px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.05);font-size:.78rem;color:rgba(255,255,255,.35)}
-.set-body{display:flex;min-height:300px}
+/* ============================================================
+   SETTINGS
+   ============================================================ */
+.set-demo{max-width:700px;margin:0 auto;background:var(--surface);border-radius:14px;border:1px solid var(--border);overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.set-top{background:var(--surface2);padding:12px 18px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.04);font-size:.75rem;color:rgba(255,255,255,.3)}
+.set-body{display:flex;min-height:280px}
 .set-side{width:155px;background:rgba(0,0,0,.15);border-right:1px solid rgba(255,255,255,.04);padding:6px;flex-shrink:0}
-.set-side-item{padding:9px 12px;border-radius:7px;cursor:pointer;font-size:.8rem;color:rgba(255,255,255,.45);transition:all .15s;margin-bottom:1px;user-select:none}
-.set-side-item:hover{color:rgba(255,255,255,.7);background:rgba(255,255,255,.03)}
-.set-side-item.sel{color:#fff;background:rgba(94,158,255,.1)}
+.set-side-item{padding:9px 12px;border-radius:7px;cursor:pointer;font-size:.8rem;color:rgba(255,255,255,.4);transition:all .15s;margin-bottom:1px;user-select:none}
+.set-side-item:hover{color:rgba(255,255,255,.65);background:rgba(255,255,255,.03)}
+.set-side-item.sel{color:var(--white);background:rgba(0,122,255,.1)}
 .set-main{padding:18px 22px;flex:1}
 .set-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.03)}
 .set-row:last-child{border-bottom:none}
-.set-row-lbl{font-size:.82rem;color:rgba(255,255,255,.75)}
-.set-row-sub{font-size:.7rem;color:rgba(255,255,255,.3);margin-top:2px}
+.set-row-lbl{font-size:.82rem;color:rgba(255,255,255,.72)}
+.set-row-sub{font-size:.7rem;color:rgba(255,255,255,.25);margin-top:2px}
 .set-slider{-webkit-appearance:none;width:110px;height:4px;border-radius:2px;background:rgba(255,255,255,.12);outline:none}
-.set-slider::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:#5e9eff;cursor:pointer}
+.set-slider::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--blue);cursor:pointer}
 
-/* ===== INSTALL ===== */
+/* ============================================================
+   INSTALL
+   ============================================================ */
 .inst{background:rgba(255,255,255,.015);border-top:1px solid rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.04);padding:80px 0}
 .inst-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:32px}
-.inst-card{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:28px}
-.inst-card h3{font-size:1.1rem;color:#fff;margin-bottom:16px}
-.inst-card pre{background:rgba(0,0,0,.35);border-radius:10px;padding:14px 18px;font-size:.8rem;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.04);line-height:1.7;font-family:'SF Mono',Monaco,'Cascadia Code',monospace;overflow-x:auto}
+.inst-card{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:28px}
+.inst-card h3{font-size:1.1rem;color:var(--white);margin-bottom:16px}
+.inst-card pre{background:rgba(0,0,0,.35);border-radius:10px;padding:14px 18px;font-size:.8rem;color:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.04);line-height:1.7;font-family:'SF Mono',Monaco,monospace;overflow-x:auto}
 .inst-steps{list-style:none;counter-reset:s}
-.inst-steps li{counter-increment:s;padding:9px 0 9px 34px;position:relative;font-size:.88rem;color:rgba(255,255,255,.6)}
-.inst-steps li::before{content:counter(s);position:absolute;left:0;top:9px;width:21px;height:21px;border-radius:50%;background:rgba(94,158,255,.12);color:#5e9eff;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+.inst-steps li{counter-increment:s;padding:9px 0 9px 34px;position:relative;font-size:.88rem;color:rgba(255,255,255,.55)}
+.inst-steps li::before{content:counter(s);position:absolute;left:0;top:9px;width:21px;height:21px;border-radius:50%;background:rgba(0,122,255,.12);color:var(--blue);font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center}
 
-/* ===== FOOTER ===== */
+/* ============================================================
+   FOOTER
+   ============================================================ */
 .ftr{padding:36px 0;text-align:center;border-top:1px solid rgba(255,255,255,.04)}
 .ftr-links{display:flex;gap:22px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
-.ftr-links a{font-size:.82rem;color:rgba(255,255,255,.4)}
-.ftr-links a:hover{color:rgba(255,255,255,.65)}
-.ftr-copy{font-size:.75rem;color:rgba(255,255,255,.25)}
+.ftr-links a{font-size:.82rem;color:rgba(255,255,255,.35)}
+.ftr-links a:hover{color:rgba(255,255,255,.6)}
+.ftr-copy{font-size:.75rem;color:rgba(255,255,255,.2)}
 
-/* ===== TOAST ===== */
-.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(100px);background:rgba(255,255,255,.1);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:#fff;padding:9px 22px;border-radius:20px;font-size:.82rem;font-weight:500;z-index:9999;transition:transform .4s cubic-bezier(.16,1,.3,1);pointer-events:none;border:1px solid rgba(255,255,255,.1);white-space:nowrap}
+/* ============================================================
+   TOAST
+   ============================================================ */
+.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(100px);background:rgba(60,60,67,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:var(--white);padding:9px 22px;border-radius:20px;font-size:.82rem;font-weight:500;z-index:9999;transition:transform .4s cubic-bezier(.16,1,.3,1);pointer-events:none;border:1px solid rgba(255,255,255,.08)}
 .toast.in{transform:translateX(-50%) translateY(0)}
 
-/* ===== SCROLL ===== */
+/* ============================================================
+   SCROLL REVEAL
+   ============================================================ */
 .sr{opacity:0;transform:translateY(30px);transition:all .7s ease-out}
 .sr.seen{opacity:1;transform:translateY(0)}
 
-/* ===== RESPONSIVE ===== */
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media(max-width:768px){
-  .hero h1{font-size:2rem}.hero p.desc{font-size:.95rem}
-  .nav-links a:nth-child(-n+4){display:none}
-  .island.s0{width:150px;height:30px}.island.s2{width:calc(100vw - 48px);height:auto;min-height:170px}
-  .island.sv,.island.sb{width:260px}.island.sd,.island.sbatt,.island.sconn{width:220px}
-  .exp-grid{grid-template-columns:1fr 1fr}.feat-grid{grid-template-columns:1fr}
-  .inst-grid{grid-template-columns:1fr}.set-body{flex-direction:column}.set-side{width:100%;display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,.04);flex-direction:row}.set-side-item{white-space:nowrap}
-  .mac-screen{height:320px}
+  .hero h1{font-size:2rem}.hero .sub{font-size:.95rem}
+  .nav-links a.hide-m{display:none}
+  .mac-screen{height:340px}
+  .island{width:150px!important;height:30px!important}
+  .island-stage.expanded .island{width:calc(100vw - 48px)!important;min-height:170px!important;height:auto!important}
+  .island-stage.hud .island{width:260px!important}
+  .feat-grid{grid-template-columns:1fr}
+  .inst-grid{grid-template-columns:1fr}
+  .set-body{flex-direction:column}.set-side{width:100%;display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,.04);flex-direction:row}.set-side-item{white-space:nowrap}
+  .ctrl-bar{gap:5px}.ctrl-btn{font-size:.75rem;padding:6px 10px}
 }
 @media(max-width:480px){
-  .hero h1{font-size:1.7rem}.exp-grid{grid-template-columns:1fr}.hero-btns{flex-direction:column;align-items:center}
-  .ctrl-bar{gap:5px}.ctrl-btn{font-size:.75rem;padding:6px 10px}
+  .hero h1{font-size:1.7rem}.hero-btns{flex-direction:column;align-items:center}
 }
 </style>
 </head>
 <body>
 
+<!-- ===== NAV ===== -->
 <nav class="nav">
   <div class="nav-brand">
-    <div class="nav-logo"><div class="dot c"></div><div class="dot m"></div></div>
+    <div class="nav-icon"><i class="c"></i><i class="m"></i></div>
     <span>LilyAisland</span>
   </div>
-  <div class="nav-links" id="navLinks">
-    <a href="#demo" data-i18n="nav.demo">Demo</a>
-    <a href="#features" data-i18n="nav.features">Features</a>
-    <a href="#settings" data-i18n="nav.settings">Settings</a>
-    <a href="#install" data-i18n="nav.install">Install</a>
-    <a href="https://github.com/CHOWLAN233/LilyAisland" target="_blank" rel="noopener" class="nav-gh">GitHub</a>
+  <div class="nav-links">
+    <a href="#demo" class="hide-m" data-i18n="nav.demo">演示</a>
+    <a href="#features" class="hide-m" data-i18n="nav.features">功能</a>
+    <a href="#settings" class="hide-m" data-i18n="nav.settings">设置</a>
+    <a href="#install" class="hide-m" data-i18n="nav.install">安装</a>
+    <a href="https://github.com/CHOWLAN233/LilyAisland" target="_blank" rel="noopener" class="gh">GitHub</a>
     <div class="lang-sw">
-      <button id="btnZh" class="on" onclick="setLang('zh')">中</button>
-      <button id="btnEn" onclick="setLang('en')">EN</button>
+      <button id="btnZh" class="on" data-lang="zh">中</button>
+      <button id="btnEn" data-lang="en">EN</button>
     </div>
   </div>
 </nav>
 
+<!-- ===== HERO ===== -->
 <header class="hero">
-  <h1><span class="grad">LilyAisland</span></h1>
-  <p class="desc" data-i18n="hero.desc">将 iPhone 灵动岛体验带到 Mac — 悬浮在屏幕顶部的交互式胶囊形控件，集系统监控、媒体控制、快捷操作为一体。</p>
+  <h1><span>LilyAisland</span></h1>
+  <p class="sub" data-i18n="hero.sub">将 iPhone 灵动岛体验带到 Mac — 悬浮在屏幕顶部的交互式胶囊控件，集系统监控、媒体控制、快捷操作为一体。</p>
   <div class="hero-btns">
-    <a href="#demo" class="btn btn-p" data-i18n="hero.demo">Live Demo</a>
-    <a href="https://github.com/CHOWLAN233/LilyAisland/releases" target="_blank" rel="noopener" class="btn btn-o" data-i18n="hero.dl">Download</a>
-    <a href="https://github.com/CHOWLAN233/LilyAisland" target="_blank" rel="noopener" class="btn btn-o" data-i18n="hero.src">Source Code</a>
+    <a href="#demo" class="btn btn-p" data-i18n="hero.demo">体验演示</a>
+    <a href="https://github.com/CHOWLAN233/LilyAisland/releases" target="_blank" rel="noopener" class="btn btn-o" data-i18n="hero.dl">下载应用</a>
+    <a href="https://github.com/CHOWLAN233/LilyAisland" target="_blank" rel="noopener" class="btn btn-o" data-i18n="hero.src">查看源码</a>
   </div>
 </header>
 
 <!-- ===== DEMO ===== -->
-<section class="demo-section" id="demo">
+<section class="demo-sec" id="demo">
   <div class="sec-head">
-    <h2 data-i18n="demo.title">Interactive Demo</h2>
-    <p data-i18n="demo.desc">Hover or click the island to experience every interaction mode — just like the real app</p>
+    <h2 data-i18n="demo.title">交互式演示</h2>
+    <p class="sub" data-i18n="demo.sub">悬停或点击灵动岛，体验每种交互模式 — 与真实应用完全一致</p>
   </div>
 
-  <div class="mac-frame">
+  <div class="mac">
     <div class="mac-top"><div class="mac-dot r"></div><div class="mac-dot y"></div><div class="mac-dot g"></div></div>
     <div class="mac-screen" id="macScreen">
-      <div class="island-wrap" id="islandWrap">
-        <div class="island-notch"></div>
-        <!-- Island — state managed entirely by JS -->
-        <div class="island s0" id="island">
-          <div class="island-inner" id="islandInner">
-            <div class="dot-row"><div class="dot cpu-d" id="demoCpuDot"></div><div class="dot mem-d" id="demoMemDot"></div></div>
+      <!-- Island stage -->
+      <div class="island-stage collapsed" id="stage">
+        <!-- Notch flare -->
+        <div class="notch-flare" id="notchFlare">
+          <svg viewBox="0 0 7 7"><path d="M0,0 L7,0 L7,7 C7,3.15 4.85,0 0,0 Z" fill="#0D0D14"/></svg>
+          <svg viewBox="0 0 7 7" style="transform:scaleX(-1)"><path d="M0,0 L7,0 L7,7 C7,3.15 4.85,0 0,0 Z" fill="#0D0D14"/></svg>
+        </div>
+        <!-- Island pill -->
+        <div class="island" id="island">
+          <div class="island-body" id="islandBody">
+            <!-- Content rendered by JS -->
           </div>
-          <div class="exp-panel" id="expPanel"></div>
         </div>
       </div>
-      <div class="bg-hint" data-i18n="demo.bg">macOS Desktop</div>
+      <div class="wallpaper" data-i18n="demo.bg">macOS 桌面</div>
     </div>
   </div>
 
   <div class="ctrl-bar" id="ctrlBar">
-    <button class="ctrl-btn act" data-mode="collapsed">Collapsed</button>
-    <button class="ctrl-btn" data-mode="expanded">Dashboard</button>
-    <button class="ctrl-btn" data-mode="volume">Volume HUD</button>
-    <button class="ctrl-btn" data-mode="brightness">Brightness HUD</button>
-    <button class="ctrl-btn" data-mode="dnd">Focus / DND</button>
-    <button class="ctrl-btn" data-mode="battery">Battery Alert</button>
-    <button class="ctrl-btn" data-mode="connectivity">Bluetooth</button>
-    <button class="ctrl-btn" data-mode="media">Now Playing</button>
+    <button class="ctrl-btn act" data-mode="collapsed" data-i18n="ctrl.collapsed">折叠</button>
+    <button class="ctrl-btn" data-mode="expanded" data-i18n="ctrl.expanded">展开仪表盘</button>
+    <button class="ctrl-btn" data-mode="volume" data-i18n="ctrl.volume">音量</button>
+    <button class="ctrl-btn" data-mode="brightness" data-i18n="ctrl.brightness">亮度</button>
+    <button class="ctrl-btn" data-mode="dnd" data-i18n="ctrl.dnd">专注</button>
+    <button class="ctrl-btn" data-mode="battery" data-i18n="ctrl.battery">电池</button>
+    <button class="ctrl-btn" data-mode="connectivity" data-i18n="ctrl.connectivity">蓝牙</button>
+    <button class="ctrl-btn" data-mode="media" data-i18n="ctrl.media">音乐</button>
   </div>
-  <p class="ctrl-hint" data-i18n="demo.hint">Hover or click on the island directly, or use the buttons above</p>
+  <p class="ctrl-hint" data-i18n="ctrl.hint">悬停或点击灵动岛，也可使用下方按钮切换模式</p>
 </section>
 
 <!-- ===== FEATURES ===== -->
 <section class="sec" id="features">
   <div class="container">
     <div class="sec-head">
-      <h2 data-i18n="feat.title">All Features</h2>
-      <p data-i18n="feat.desc">8 modules covering system monitoring, media control, and quick actions</p>
+      <h2 data-i18n="feat.title">全部功能</h2>
+      <p class="sub" data-i18n="feat.sub">8 个模块覆盖系统监控、媒体控制和快捷操作</p>
     </div>
     <div class="feat-grid">
 
       <!-- Now Playing -->
       <div class="feat-card" data-feat="media">
-        <h3 data-i18n="feat.m.title">Now Playing</h3>
-        <p class="desc" data-i18n="feat.m.desc">Apple Music track info, album art, playback progress. Play/pause, previous, next controls via AppleScript.</p>
+        <h3 data-i18n="feat.m.title">正在播放</h3>
+        <p class="desc" data-i18n="feat.m.desc">Apple Music 曲目信息、专辑封面、播放进度。通过 AppleScript 控制播放/暂停、上一首、下一首。</p>
         <div class="feat-demo">
-          <div class="media-art" style="width:38px;height:38px;border-radius:8px;font-size:1rem">CD</div>
-          <div style="text-align:left;flex:1"><div style="font-size:.78rem;color:#fff;font-weight:600">Blinding Lights</div><div style="font-size:.68rem;color:rgba(255,255,255,.35)">The Weeknd</div></div>
-          <button class="f-btn" data-action="prev">Prev</button>
-          <button class="f-btn" data-action="play" id="fPlayBtn">Play</button>
-          <button class="f-btn" data-action="next">Next</button>
+          <div class="art-sm" style="width:36px;height:36px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--white);font-size:.9rem">CD</div>
+          <div style="flex:1"><div style="font-size:.8rem;color:var(--white);font-weight:600">Blinding Lights</div><div style="font-size:.7rem;color:var(--gray)">The Weeknd</div></div>
+          <button class="f-btn" data-act="prev" data-i18n="feat.m.prev">上一首</button>
+          <button class="f-btn" data-act="play" id="fPlayBtn">播放</button>
+          <button class="f-btn" data-act="next" data-i18n="feat.m.next">下一首</button>
         </div>
       </div>
 
       <!-- Volume -->
       <div class="feat-card" data-feat="volume">
-        <h3 data-i18n="feat.v.title">Volume Control</h3>
-        <p class="desc" data-i18n="feat.v.desc">Intercepts system volume keys via CGEventTap, replaces macOS bezel with custom HUD. Zero-latency response.</p>
+        <h3 data-i18n="feat.v.title">音量控制</h3>
+        <p class="desc" data-i18n="feat.v.desc">通过 CGEventTap 拦截系统音量键，用自定义 HUD 替代系统弹窗。零延迟即时响应。</p>
         <div class="feat-demo">
-          <span style="opacity:.7;font-size:.85rem" data-i18n="feat.v.low">Low</span>
+          <span style="font-size:.78rem;color:var(--gray)" data-i18n="feat.v.low">低</span>
           <div class="f-slider" data-slider="vol"><div class="f-slider-fill vol" style="width:65%"></div></div>
-          <span style="font-size:.78rem;color:rgba(255,255,255,.6);min-width:32px;font-variant-numeric:tabular-nums" id="fVolPct">65%</span>
+          <span style="font-size:.8rem;color:var(--white);min-width:34px;font-variant-numeric:tabular-nums" id="fVolPct">65%</span>
           <input type="range" min="0" max="100" value="65" class="set-slider" style="width:56px" data-range="vol">
         </div>
       </div>
 
       <!-- Brightness -->
       <div class="feat-card" data-feat="brightness">
-        <h3 data-i18n="feat.br.title">Brightness Control</h3>
-        <p class="desc" data-i18n="feat.br.desc">Smooth rubber-banded brightness transitions at 60fps via DisplayServices private framework.</p>
+        <h3 data-i18n="feat.br.title">亮度调节</h3>
+        <p class="desc" data-i18n="feat.br.desc">通过 DisplayServices 私有框架实现 60fps 平滑橡皮筋式亮度过渡动画，追赶到目标值。</p>
         <div class="feat-demo">
-          <span style="opacity:.5;font-size:.85rem">◐</span>
+          <span style="color:var(--gray);font-size:.85rem">◐</span>
           <div class="f-slider" data-slider="bri"><div class="f-slider-fill bri" style="width:80%"></div></div>
-          <span style="opacity:.7;font-size:.85rem">◉</span>
+          <span style="color:var(--gray);font-size:.85rem">◉</span>
           <input type="range" min="0" max="100" value="80" class="set-slider" style="width:56px" data-range="bri">
         </div>
       </div>
 
       <!-- Battery -->
       <div class="feat-card" data-feat="battery">
-        <h3 data-i18n="feat.bat.title">Battery Monitor</h3>
-        <p class="desc" data-i18n="feat.bat.desc">Real-time percentage, charge/discharge wattage (voltage x current), adapter wattage. Plug/unplug and low-battery alerts via IOKit.</p>
+        <h3 data-i18n="feat.bat.title">电池监控</h3>
+        <p class="desc" data-i18n="feat.bat.desc">实时电量、充/放电功率（电压×电流）、适配器功率。通过 IOKit 获取硬件级数据，支持插拔和低电量提醒。</p>
         <div class="feat-demo">
-          <span style="font-size:1.1rem;opacity:.8">B</span>
-          <span style="font-weight:700;color:#22c55e;font-variant-numeric:tabular-nums" id="fBattPct">85%</span>
-          <span style="font-size:.72rem;color:rgba(255,255,255,.4)">18.5W</span>
-          <button class="f-btn" data-action="charger" id="fChargerBtn">Unplug</button>
+          <span style="font-weight:600;color:var(--green);font-variant-numeric:tabular-nums;min-width:36px" id="fBattPct">85%</span>
+          <span style="font-size:.72rem;color:var(--gray)">18.5W</span>
+          <button class="f-btn" data-act="charger" id="fChargerBtn" data-i18n="feat.bat.unplug">拔掉电源</button>
         </div>
       </div>
 
-      <!-- Focus / DND -->
+      <!-- DND -->
       <div class="feat-card" data-feat="dnd">
-        <h3 data-i18n="feat.d.title">Focus (DND)</h3>
-        <p class="desc" data-i18n="feat.d.desc">Toggle Do Not Disturb via F6 / Moon key interception. Custom indicator overlay, optional Glass sound effect.</p>
+        <h3 data-i18n="feat.dnd.title">专注模式</h3>
+        <p class="desc" data-i18n="feat.dnd.desc">通过拦截 F6 / 月亮键切换勿扰模式。自定义指示器叠加层，可选系统 Glass 音效。</p>
         <div class="feat-demo">
-          <span style="opacity:.7">DND</span>
           <div class="f-toggle" data-toggle="dnd"></div>
-          <span class="fd-text" id="fDndLabel">Off</span>
+          <span style="font-size:.8rem;color:var(--gray)" id="fDndLabel" data-i18n="feat.dnd.off">关</span>
         </div>
       </div>
 
       <!-- Connectivity -->
       <div class="feat-card" data-feat="connectivity">
-        <h3 data-i18n="feat.c.title">Connectivity</h3>
-        <p class="desc" data-i18n="feat.c.desc">Bluetooth connect/disconnect notifications. Smart device type recognition: AirPods, headphones, speakers (IOBluetooth).</p>
+        <h3 data-i18n="feat.bt.title">连接设备</h3>
+        <p class="desc" data-i18n="feat.bt.desc">蓝牙设备连接/断开通知。智能识别设备类型：AirPods、耳机、音箱（IOBluetooth）。</p>
         <div class="feat-demo">
-          <span style="opacity:.7">BT</span>
-          <span class="fd-text" id="fBtLabel">AirPods Pro</span>
-          <button class="f-btn" data-action="btToggle" id="fBtBtn">Disconnect</button>
+          <span style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0" id="fBtDot"></span>
+          <span style="font-size:.8rem;color:var(--gray)" id="fBtLabel">AirPods Pro</span>
+          <button class="f-btn" data-act="btToggle" id="fBtBtn" data-i18n="feat.bt.disc">断开</button>
         </div>
       </div>
 
       <!-- System Stats -->
       <div class="feat-card" data-feat="expanded">
-        <h3 data-i18n="feat.s.title">System Stats</h3>
-        <p class="desc" data-i18n="feat.s.desc">CPU, GPU, memory usage and temperature via AppleSMC. Hardware-level data from Mach API and IOKit.</p>
+        <h3 data-i18n="feat.sys.title">系统状态</h3>
+        <p class="desc" data-i18n="feat.sys.desc">通过 AppleSMC 获取 CPU/GPU/内存使用率和温度。Mach API 和 IOKit 硬件级数据。</p>
         <div class="feat-demo">
           <div style="display:flex;gap:14px;font-size:.73rem">
-            <div style="text-align:center"><div style="color:#5e9eff;font-weight:700;font-variant-numeric:tabular-nums" id="fCpu">32%</div><div style="color:rgba(255,255,255,.3)">CPU</div></div>
-            <div style="text-align:center"><div style="color:#22c55e;font-weight:700;font-variant-numeric:tabular-nums" id="fGpu">18%</div><div style="color:rgba(255,255,255,.3)">GPU</div></div>
-            <div style="text-align:center"><div style="color:#f59e0b;font-weight:700;font-variant-numeric:tabular-nums" id="fMem">45%</div><div style="color:rgba(255,255,255,.3)">MEM</div></div>
-            <div style="text-align:center"><div style="color:#ef4444;font-weight:700;font-variant-numeric:tabular-nums" id="fTemp">62&deg;C</div><div style="color:rgba(255,255,255,.3)">TEMP</div></div>
+            <div style="text-align:center"><div style="color:var(--blue);font-weight:700" id="fCpu">32%</div><div style="color:var(--gray);font-size:.65rem">CPU</div></div>
+            <div style="text-align:center"><div style="color:var(--green);font-weight:700" id="fGpu">18%</div><div style="color:var(--gray);font-size:.65rem">GPU</div></div>
+            <div style="text-align:center"><div style="color:var(--orange);font-weight:700" id="fMem">45%</div><div style="color:var(--gray);font-size:.65rem">内存</div></div>
+            <div style="text-align:center"><div style="color:var(--red);font-weight:700" id="fTemp">62°</div><div style="color:var(--gray);font-size:.65rem">温度</div></div>
           </div>
-          <button class="f-btn" data-action="refresh">Refresh</button>
+          <button class="f-btn" data-act="refresh" data-i18n="feat.sys.refresh">刷新</button>
         </div>
       </div>
 
       <!-- Localization -->
       <div class="feat-card" data-feat="i18n">
-        <h3 data-i18n="feat.l.title">Localization</h3>
-        <p class="desc" data-i18n="feat.l.desc">Complete zh-Hans and en localization (~110 keys). Instant switch in Settings, no restart needed.</p>
+        <h3 data-i18n="feat.lang.title">多语言支持</h3>
+        <p class="desc" data-i18n="feat.lang.desc">完整的中文和 English 本地化（约 110 个字符串键）。设置中即时切换，无需重启应用。</p>
         <div class="feat-demo">
-          <button class="f-btn" style="background:rgba(94,158,255,.12);border-color:rgba(94,158,255,.2);color:#5e9eff" data-action="langZh">Chinese</button>
-          <button class="f-btn" data-action="langEn">English</button>
-          <span class="fd-text" id="fLangNote"></span>
+          <button class="f-btn" style="background:rgba(0,122,255,.12);border-color:rgba(0,122,255,.2);color:var(--blue)" data-act="langZh">中文</button>
+          <button class="f-btn" data-act="langEn">English</button>
+          <span style="font-size:.78rem;color:var(--gray)" id="fLangNote"></span>
         </div>
       </div>
 
@@ -382,11 +492,11 @@ a:hover{color:#8bb9ff}
 <section class="sec" id="settings">
   <div class="container">
     <div class="sec-head">
-      <h2 data-i18n="set.title">Settings Panel</h2>
-      <p data-i18n="set.desc">7 categories with fine-grained control over every module behavior</p>
+      <h2 data-i18n="set.title">设置面板</h2>
+      <p class="sub" data-i18n="set.sub">7 个设置分类，精细控制每个模块的行为</p>
     </div>
     <div class="set-demo">
-      <div class="set-top"><div class="mac-dot r" style="width:9px;height:9px"></div><div class="mac-dot y" style="width:9px;height:9px"></div><div class="mac-dot g" style="width:9px;height:9px"></div><span data-i18n="set.win">Settings — LilyAisland</span></div>
+      <div class="set-top"><div class="mac-dot r" style="width:9px;height:9px"></div><div class="mac-dot y" style="width:9px;height:9px"></div><div class="mac-dot g" style="width:9px;height:9px"></div><span data-i18n="set.win">设置 — LilyAisland</span></div>
       <div class="set-body">
         <div class="set-side" id="setSide"></div>
         <div class="set-main" id="setMain"></div>
@@ -399,30 +509,31 @@ a:hover{color:#8bb9ff}
 <section class="inst" id="install">
   <div class="container">
     <div class="sec-head">
-      <h2 data-i18n="inst.title">Installation</h2>
-      <p data-i18n="inst.desc">Download directly or build from source</p>
+      <h2 data-i18n="inst.title">安装方式</h2>
+      <p class="sub" data-i18n="inst.sub">直接下载或从源码构建</p>
     </div>
     <div class="inst-grid">
       <div class="inst-card">
-        <h3 data-i18n="inst.dl">Download (Recommended)</h3>
+        <h3 data-i18n="inst.dl">下载安装（推荐）</h3>
         <ol class="inst-steps">
-          <li data-i18n="inst.s1">Go to <a href="https://github.com/CHOWLAN233/LilyAisland/releases" target="_blank">Releases</a> and download the latest .zip</li>
-          <li data-i18n="inst.s2">Unzip and drag LilyAisland.app to Applications</li>
-          <li data-i18n="inst.s3">Launch, grant Accessibility permission when prompted</li>
-          <li data-i18n="inst.s4">The island appears at the top center of your screen</li>
+          <li data-i18n="inst.s1">前往 <a href="https://github.com/CHOWLAN233/LilyAisland/releases" target="_blank">Releases 页面</a> 下载最新 .zip</li>
+          <li data-i18n="inst.s2">解压并将 LilyAisland.app 拖入「应用程序」文件夹</li>
+          <li data-i18n="inst.s3">启动应用，根据提示授予「辅助功能」权限</li>
+          <li data-i18n="inst.s4">灵动岛将出现在屏幕顶部中央</li>
         </ol>
       </div>
       <div class="inst-card">
-        <h3 data-i18n="inst.bld">Build from Source</h3>
+        <h3 data-i18n="inst.bld">从源码构建</h3>
         <pre>git clone https://github.com/CHOWLAN233/LilyAisland.git
 cd LilyAisland
 open LilyAisland.xcodeproj</pre>
-        <p style="font-size:.8rem;color:rgba(255,255,255,.4);margin-top:10px" data-i18n="inst.note">Requires Xcode 16+, macOS 15.2+. Product > Archive or use xcodebuild.</p>
+        <p style="font-size:.78rem;color:rgba(255,255,255,.35);margin-top:10px" data-i18n="inst.note">需要 Xcode 16+，macOS 15.2+。Product → Archive 或使用 xcodebuild 命令行构建。</p>
       </div>
     </div>
   </div>
 </section>
 
+<!-- ===== FOOTER ===== -->
 <footer class="ftr">
   <div class="ftr-links">
     <a href="https://github.com/CHOWLAN233/LilyAisland" target="_blank" rel="noopener">GitHub</a>
@@ -435,335 +546,460 @@ open LilyAisland.xcodeproj</pre>
 
 <div class="toast" id="toast"></div>
 
-<!-- ===== SCRIPTS ===== -->
+<!-- ===============================================================
+     SCRIPTS — event-driven, no inline handlers, complete i18n
+     =============================================================== -->
 <script>
 (function(){
 'use strict';
 
-// ===== I18N =====
-const T = {
+// ===== I18N — COMPLETE Chinese/English with NO English leakage =====
+var T = {
   zh: {
-    'nav.demo':'Demo','nav.features':'Features','nav.settings':'Settings','nav.install':'Install',
-    'hero.desc':'将 iPhone 灵动岛体验带到 Mac — 悬浮在屏幕顶部的交互式胶囊形控件，集系统监控、媒体控制、快捷操作为一体。',
-    'hero.demo':'Live Demo','hero.dl':'Download','hero.src':'Source Code',
-    'demo.title':'Interactive Demo','demo.desc':'悬停或点击灵动岛，体验每一种交互模式 — 与真实应用一致',
-    'demo.bg':'macOS 桌面','demo.hint':'悬停或点击灵动岛，或使用下方按钮切换模式',
-    'feat.title':'全部功能','feat.desc':'8 个模块覆盖系统监控、媒体控制和快捷操作',
+    'nav.demo':'演示','nav.features':'功能','nav.settings':'设置','nav.install':'安装',
+    'hero.sub':'将 iPhone 灵动岛体验带到 Mac — 悬浮在屏幕顶部的交互式胶囊控件，集系统监控、媒体控制、快捷操作为一体。',
+    'hero.demo':'体验演示','hero.dl':'下载应用','hero.src':'查看源码',
+    'demo.title':'交互式演示','demo.sub':'悬停或点击灵动岛，体验每种交互模式 — 与真实应用完全一致',
+    'demo.bg':'macOS 桌面',
+    'ctrl.collapsed':'折叠状态','ctrl.expanded':'展开仪表盘','ctrl.volume':'音量 HUD','ctrl.brightness':'亮度 HUD',
+    'ctrl.dnd':'专注模式','ctrl.battery':'电池提醒','ctrl.connectivity':'蓝牙连接','ctrl.media':'音乐播放',
+    'ctrl.hint':'悬停或点击灵动岛，也可使用下方按钮切换模式',
+    'feat.title':'全部功能','feat.sub':'8 个模块覆盖系统监控、媒体控制和快捷操作',
     'feat.m.title':'正在播放','feat.m.desc':'Apple Music 曲目信息、专辑封面、播放进度。通过 AppleScript 控制播放/暂停、上一首、下一首。',
-    'feat.v.title':'音量控制','feat.v.desc':'通过 CGEventTap 拦截系统音量键，用自定义 HUD 替代系统弹窗。零延迟跟手。','feat.v.low':'低',
-    'feat.br.title':'亮度调节','feat.br.desc':'通过 DisplayServices 私有框架实现 60fps 平滑橡皮筋式亮度过渡动画。',
-    'feat.bat.title':'电池监控','feat.bat.desc':'实时电量、充/放电功率（电压 x 电流）、适配器功率。通过 IOKit 获取硬件级数据，支持插拔和低电量提醒。',
-    'feat.d.title':'专注模式','feat.d.desc':'通过拦截 F6 / 月亮键切换勿扰模式。自定义指示器，可选系统 Glass 音效。',
-    'feat.c.title':'连接设备','feat.c.desc':'蓝牙设备连接/断开通知。智能识别设备类型：AirPods、耳机、音箱（IOBluetooth）。',
-    'feat.s.title':'系统状态','feat.s.desc':'通过 AppleSMC 获取 CPU/GPU/内存使用率和温度。Mach API 和 IOKit 硬件级数据。',
-    'feat.l.title':'多语言','feat.l.desc':'完整的中文和 English 本地化（~110 个键）。设置中即时切换，无需重启。',
-    'set.title':'设置面板','set.desc':'7 个分类，精细控制每个模块的行为','set.win':'设置 — LilyAisland',
-    'inst.title':'安装方式','inst.desc':'直接下载或从源码构建',
-    'inst.dl':'下载安装（推荐）','inst.s1':'前往 Releases 页面下载最新 .zip','inst.s2':'解压并拖入「应用程序」文件夹',
-    'inst.s3':'启动应用，根据提示授予「辅助功能」权限','inst.s4':'灵动岛将出现在屏幕顶部中央',
-    'inst.bld':'从源码构建','inst.note':'需要 Xcode 16+，macOS 15.2+。Product > Archive 或使用 xcodebuild 命令行。',
-    // Settings tabs
-    'set.general':'通用','set.battery':'电池','set.connectivity':'连接设备','set.focus':'专注','set.display':'显示','set.sound':'声音','set.nowplaying':'正在播放',
-    // Toast messages
-    'toast.collapsed':'折叠状态 — 彩色圆点显示 CPU/内存负载',
-    'toast.expanded':'展开仪表盘 — CPU/GPU/内存/温度/电池/蓝牙',
-    'toast.volume':'音量 HUD — 拦截系统音量键',
-    'toast.brightness':'亮度 HUD — 平滑橡皮筋动画',
-    'toast.dnd.on':'勿扰模式已开启','toast.dnd.off':'勿扰模式已关闭',
-    'toast.battery':'电池状态',
-    'toast.bt.on':'蓝牙已连接','toast.bt.off':'蓝牙已断开',
-    'toast.media':'音乐播放器 — Apple Music 控制',
-    'toast.play':'正在播放','toast.pause':'已暂停','toast.prev':'上一首','toast.next':'下一首',
-    'toast.refresh':'系统状态已刷新','toast.lang':'已切换语言','toast.set':'设置已更新',
-    'toast.charger.on':'电源已连接','toast.charger.off':'使用电池供电',
+    'feat.m.prev':'上一首','feat.m.next':'下一首',
+    'feat.v.title':'音量控制','feat.v.desc':'通过 CGEventTap 拦截系统音量键，用自定义 HUD 替代系统弹窗。零延迟即时响应。','feat.v.low':'低',
+    'feat.br.title':'亮度调节','feat.br.desc':'通过 DisplayServices 私有框架实现 60fps 平滑橡皮筋式亮度过渡动画，追赶到目标值。',
+    'feat.bat.title':'电池监控','feat.bat.desc':'实时电量、充/放电功率（电压×电流）、适配器功率。通过 IOKit 获取硬件级数据，支持插拔和低电量提醒。',
+    'feat.bat.unplug':'拔掉电源','feat.bat.plug':'插上电源',
+    'feat.dnd.title':'专注模式','feat.dnd.desc':'通过拦截 F6 / 月亮键切换勿扰模式。自定义指示器叠加层，可选系统 Glass 音效。',
+    'feat.dnd.on':'开','feat.dnd.off':'关',
+    'feat.bt.title':'连接设备','feat.bt.desc':'蓝牙设备连接/断开通知。智能识别设备类型：AirPods、耳机、音箱（IOBluetooth）。',
+    'feat.bt.connected':'已连接','feat.bt.disc':'断开','feat.bt.conn':'连接',
+    'feat.sys.title':'系统状态','feat.sys.desc':'通过 AppleSMC 获取 CPU/GPU/内存使用率和温度。Mach API 和 IOKit 硬件级数据。',
+    'feat.sys.refresh':'刷新',
+    'feat.lang.title':'多语言支持','feat.lang.desc':'完整的中文和 English 本地化（约 110 个字符串键）。设置中即时切换，无需重启应用。',
+    'set.title':'设置面板','set.sub':'7 个设置分类，精细控制每个模块的行为','set.win':'设置 — LilyAisland',
+    'set.general':'通用','set.battery':'电池','set.connectivity':'连接设备','set.focus':'专注',
+    'set.display':'显示','set.sound':'声音','set.nowplaying':'正在播放',
+    'inst.title':'安装方式','inst.sub':'直接下载或从源码构建',
+    'inst.dl':'下载安装（推荐）',
+    'inst.s1':'前往 Releases 页面下载最新 .zip',
+    'inst.s2':'解压并将 LilyAisland.app 拖入「应用程序」文件夹',
+    'inst.s3':'启动应用，根据提示授予「辅助功能」权限',
+    'inst.s4':'灵动岛将出现在屏幕顶部中央',
+    'inst.bld':'从源码构建',
+    'inst.note':'需要 Xcode 16+，macOS 15.2+。Product → Archive 或使用 xcodebuild 命令行构建。',
+    // Toast
+    'toast.col':'折叠状态 — 彩色圆点显示 CPU/内存负载',
+    'toast.exp':'展开仪表盘 — CPU/GPU/内存/温度/电池/蓝牙',
+    'toast.vol':'音量 HUD — 拦截系统音量键，替代原生弹窗',
+    'toast.bri':'亮度 HUD — 60fps 平滑橡皮筋动画',
+    'toast.dnd.on':'专注模式：已开启','toast.dnd.off':'专注模式：已关闭',
+    'toast.bat':'电池状态','toast.bt.on':'蓝牙已连接','toast.bt.off':'蓝牙已断开',
+    'toast.med':'音乐播放器 — Apple Music 控制',
+    'toast.play':'正在播放','toast.pause':'已暂停','toast.prev':'上一首曲目','toast.next':'下一首曲目',
+    'toast.refresh':'系统状态已刷新','toast.lang':'语言已切换','toast.set':'设置已更新',
+    'toast.charger.on':'电源适配器已连接','toast.charger.off':'使用电池供电',
+    // Settings panel items
+    'set.launch':'开机自启','set.launch.d':'通过 SMAppService 注册登录项',
+    'set.haptic':'触觉反馈','set.haptic.d':'悬停/点击时触发 NSHapticFeedback',
+    'set.fshover':'全屏下悬停触发','set.fshover.d':'在全屏应用中也允许悬停展开',
+    'set.notch':'刘海圆角半径','set.notch.d':'4 – 16 pt，默认 7 pt',
+    'set.bat.enable':'启用电池提醒','set.bat.plug':'充/断电弹窗提醒',
+    'set.bat.pct':'显示电量百分比','set.bat.dwell':'弹窗驻留时长','set.bat.dwell.d':'1 – 10 秒',
+    'set.bat.low':'低电量提醒阈值','set.bat.low.d':'5 – 50%',
+    'set.bt.enable':'启用连接性提醒','set.bt.name':'显示设备名称','set.bt.dwell':'弹窗驻留时长','set.bt.dwell.d':'1 – 10 秒',
+    'set.foc.enable':'启用专注切换','set.foc.dwell':'弹窗驻留时长','set.foc.dwell.d':'1 – 10 秒',
+    'set.foc.sound':'进入专注时播放声音','set.foc.sound.d':'系统 Glass 音效',
+    'set.foc.hide':'隐藏标签',
+    'set.dis.enable':'启用亮度弹窗','set.dis.dwell':'弹窗驻留时长','set.dis.dwell.d':'1 – 5 秒',
+    'set.dis.step':'亮度步长','set.dis.step.d':'每次按键调整量',
+    'set.snd.enable':'启用音量弹窗','set.snd.dwell':'弹窗驻留时长','set.snd.dwell.d':'1 – 5 秒',
+    'set.snd.step':'音量步长','set.snd.step.d':'每次按键调整量',
+    'set.np.enable':'启用正在播放','set.np.art':'显示专辑封面',
+    'set.np.prog':'显示进度条','set.np.poll':'轮询间隔','set.np.poll.d':'0.5 – 5 秒',
     'dnd.on':'开','dnd.off':'关',
     'bt.connected':'AirPods Pro','bt.disconnected':'未连接',
-    'bt.btn.disc':'断开','bt.btn.conn':'连接',
-    'charger.unplug':'拔掉电源','charger.plug':'插上电源'
+    'bt.disc':'断开','bt.conn':'连接',
+    'pwr.ac':'电源适配器','pwr.bat':'电池供电',
+    'adapter':'适配器功率','bat.charge':'充电功率','bat.output':'放电功率',
   },
   en: {
     'nav.demo':'Demo','nav.features':'Features','nav.settings':'Settings','nav.install':'Install',
-    'hero.desc':'Bring iPhone Dynamic Island to your Mac — a floating, interactive pill-shaped widget for system monitoring, media control, and quick actions.',
+    'hero.sub':'Bring iPhone Dynamic Island to your Mac — a floating, interactive pill-shaped widget for system monitoring, media control, and quick actions.',
     'hero.demo':'Live Demo','hero.dl':'Download','hero.src':'Source Code',
-    'demo.title':'Interactive Demo','demo.desc':'Hover or click the island to experience every interaction mode — just like the real app',
-    'demo.bg':'macOS Desktop','demo.hint':'Hover or click on the island, or use the buttons below to switch modes',
-    'feat.title':'All Features','feat.desc':'8 modules covering system monitoring, media control, and quick actions',
-    'feat.m.title':'Now Playing','feat.m.desc':'Apple Music track info, album art, playback progress. Play/pause, previous, next controls via AppleScript.',
-    'feat.v.title':'Volume Control','feat.v.desc':'Intercepts system volume keys via CGEventTap, replaces macOS bezel with a custom HUD. Zero-latency response.','feat.v.low':'Low',
+    'demo.title':'Interactive Demo','demo.sub':'Hover or click the island to experience every interaction mode — just like the real app',
+    'demo.bg':'macOS Desktop',
+    'ctrl.collapsed':'Collapsed','ctrl.expanded':'Dashboard','ctrl.volume':'Volume HUD','ctrl.brightness':'Brightness HUD',
+    'ctrl.dnd':'Focus / DND','ctrl.battery':'Battery Alert','ctrl.connectivity':'Bluetooth','ctrl.media':'Now Playing',
+    'ctrl.hint':'Hover or click the island, or use the buttons below to switch modes',
+    'feat.title':'All Features','feat.sub':'8 modules covering system monitoring, media control, and quick actions',
+    'feat.m.title':'Now Playing','feat.m.desc':'Apple Music track info, album art, playback progress. Play/pause, previous, next via AppleScript.',
+    'feat.m.prev':'Previous','feat.m.next':'Next',
+    'feat.v.title':'Volume Control','feat.v.desc':'Intercepts system volume keys via CGEventTap, replaces macOS bezel with a custom HUD. Zero-latency.','feat.v.low':'Low',
     'feat.br.title':'Brightness Control','feat.br.desc':'Smooth rubber-banded brightness transitions at 60fps via DisplayServices private framework.',
     'feat.bat.title':'Battery Monitor','feat.bat.desc':'Real-time percentage, charge/discharge wattage (voltage x current), adapter wattage. Plug/unplug and low-battery alerts via IOKit.',
-    'feat.d.title':'Focus (DND)','feat.d.desc':'Toggle Do Not Disturb via F6 / Moon key interception. Custom indicator overlay, optional Glass sound effect.',
-    'feat.c.title':'Connectivity','feat.c.desc':'Bluetooth device connect/disconnect notifications. Smart device type recognition: AirPods, headphones, speakers (IOBluetooth).',
-    'feat.s.title':'System Stats','feat.s.desc':'CPU, GPU, memory usage and temperature readings via AppleSMC. Hardware-level data from Mach API and IOKit.',
-    'feat.l.title':'Localization','feat.l.desc':'Complete Chinese and English localization (~110 keys). Instant switch in Settings, no restart needed.',
-    'set.title':'Settings Panel','set.desc':'7 categories with fine-grained control over every module behavior','set.win':'Settings — LilyAisland',
-    'inst.title':'Installation','inst.desc':'Download directly or build from source',
-    'inst.dl':'Download (Recommended)','inst.s1':'Go to Releases page and download the latest .zip','inst.s2':'Unzip and drag LilyAisland.app to Applications',
-    'inst.s3':'Launch the app, grant Accessibility permission when prompted','inst.s4':'The island appears at the top center of your screen',
-    'inst.bld':'Build from Source','inst.note':'Requires Xcode 16+, macOS 15.2+. Product > Archive or use xcodebuild.',
-    // Settings tabs
-    'set.general':'General','set.battery':'Battery','set.connectivity':'Connectivity','set.focus':'Focus','set.display':'Display','set.sound':'Sound','set.nowplaying':'Now Playing',
-    // Toast messages
-    'toast.collapsed':'Collapsed — colored dots show CPU/Memory load',
-    'toast.expanded':'Dashboard — CPU/GPU/Memory/Temp/Battery/Bluetooth',
-    'toast.volume':'Volume HUD — intercepts system volume keys',
-    'toast.brightness':'Brightness HUD — smooth rubber-banded animation',
+    'feat.bat.unplug':'Unplug','feat.bat.plug':'Plug In',
+    'feat.dnd.title':'Focus (DND)','feat.dnd.desc':'Toggle Do Not Disturb via F6 / Moon key interception. Custom indicator overlay, optional Glass sound effect.',
+    'feat.dnd.on':'On','feat.dnd.off':'Off',
+    'feat.bt.title':'Connectivity','feat.bt.desc':'Bluetooth device connect/disconnect notifications. Smart device type recognition (AirPods, headphones, speakers) via IOBluetooth.',
+    'feat.bt.connected':'Connected','feat.bt.disc':'Disconnect','feat.bt.conn':'Connect',
+    'feat.sys.title':'System Stats','feat.sys.desc':'CPU, GPU, memory usage and temperature via AppleSMC. Hardware-level data from Mach API and IOKit.',
+    'feat.sys.refresh':'Refresh',
+    'feat.lang.title':'Localization','feat.lang.desc':'Complete Chinese and English localization (~110 keys). Instant switch in Settings, no restart needed.',
+    'set.title':'Settings Panel','set.sub':'7 categories with fine-grained control over every module','set.win':'Settings — LilyAisland',
+    'set.general':'General','set.battery':'Battery','set.connectivity':'Connectivity','set.focus':'Focus',
+    'set.display':'Display','set.sound':'Sound','set.nowplaying':'Now Playing',
+    'inst.title':'Installation','inst.sub':'Download directly or build from source',
+    'inst.dl':'Download (Recommended)',
+    'inst.s1':'Go to Releases page and download the latest .zip',
+    'inst.s2':'Unzip and drag LilyAisland.app to Applications',
+    'inst.s3':'Launch the app, grant Accessibility permission when prompted',
+    'inst.s4':'The island appears at the top center of your screen',
+    'inst.bld':'Build from Source',
+    'inst.note':'Requires Xcode 16+, macOS 15.2+. Product → Archive or use xcodebuild CLI.',
+    // Toast
+    'toast.col':'Collapsed — colored dots show CPU / Memory load',
+    'toast.exp':'Dashboard — CPU / GPU / Memory / Temperature / Battery / Bluetooth',
+    'toast.vol':'Volume HUD — intercepts system volume keys',
+    'toast.bri':'Brightness HUD — 60fps rubber-banded animation',
     'toast.dnd.on':'Focus Mode: On','toast.dnd.off':'Focus Mode: Off',
-    'toast.battery':'Battery Status',
-    'toast.bt.on':'Bluetooth Connected','toast.bt.off':'Bluetooth Disconnected',
-    'toast.media':'Now Playing — Apple Music Controls',
+    'toast.bat':'Battery Status','toast.bt.on':'Bluetooth Connected','toast.bt.off':'Bluetooth Disconnected',
+    'toast.med':'Now Playing — Apple Music Controls',
     'toast.play':'Playing','toast.pause':'Paused','toast.prev':'Previous Track','toast.next':'Next Track',
     'toast.refresh':'Stats Refreshed','toast.lang':'Language Switched','toast.set':'Setting Updated',
     'toast.charger.on':'Charger Connected','toast.charger.off':'On Battery',
+    // Settings panel items
+    'set.launch':'Launch at Login','set.launch.d':'Register via SMAppService',
+    'set.haptic':'Haptic Feedback','set.haptic.d':'NSHapticFeedback on hover/click',
+    'set.fshover':'Hover in Full Screen','set.fshover.d':'Allow hover expansion in fullscreen apps',
+    'set.notch':'Notch Curve Radius','set.notch.d':'4 – 16 pt, default 7 pt',
+    'set.bat.enable':'Enable Battery Alerts','set.bat.plug':'Alert on Connect/Disconnect',
+    'set.bat.pct':'Show Percentage','set.bat.dwell':'Duration','set.bat.dwell.d':'1 – 10 seconds',
+    'set.bat.low':'Low Battery Threshold','set.bat.low.d':'5 – 50%',
+    'set.bt.enable':'Enable Connectivity Alerts','set.bt.name':'Show Device Name','set.bt.dwell':'Duration','set.bt.dwell.d':'1 – 10 seconds',
+    'set.foc.enable':'Enable Focus Toggle','set.foc.dwell':'Duration','set.foc.dwell.d':'1 – 10 seconds',
+    'set.foc.sound':'Play Sound on Enter','set.foc.sound.d':'System Glass sound',
+    'set.foc.hide':'Hide Label',
+    'set.dis.enable':'Enable Brightness Overlay','set.dis.dwell':'Duration','set.dis.dwell.d':'1 – 5 seconds',
+    'set.dis.step':'Step Size','set.dis.step.d':'Adjustment per key press',
+    'set.snd.enable':'Enable Volume Overlay','set.snd.dwell':'Duration','set.snd.dwell.d':'1 – 5 seconds',
+    'set.snd.step':'Step Size','set.snd.step.d':'Adjustment per key press',
+    'set.np.enable':'Enable Now Playing','set.np.art':'Show Album Artwork',
+    'set.np.prog':'Show Progress Bar','set.np.poll':'Polling Interval','set.np.poll.d':'0.5 – 5 seconds',
     'dnd.on':'On','dnd.off':'Off',
     'bt.connected':'AirPods Pro','bt.disconnected':'Disconnected',
-    'bt.btn.disc':'Disconnect','bt.btn.conn':'Connect',
-    'charger.unplug':'Unplug','charger.plug':'Plug In'
+    'bt.disc':'Disconnect','bt.conn':'Connect',
+    'pwr.ac':'Power Adapter','pwr.bat':'On Battery',
+    'adapter':'Adapter Power','bat.charge':'Charge Rate','bat.output':'Output Rate',
   }
 };
 
-let L = 'zh';
+var L = 'zh';
 function t(k){return (T[L]||T.en)[k]||k;}
 function setLang(l){
-  L=l;document.documentElement.lang=l==='zh'?'zh-CN':'en';
+  L=l;
+  document.documentElement.lang=l==='zh'?'zh-CN':'en';
   document.getElementById('btnZh').classList.toggle('on',l==='zh');
   document.getElementById('btnEn').classList.toggle('on',l==='en');
   document.querySelectorAll('[data-i18n]').forEach(function(el){
     var k=el.getAttribute('data-i18n');
     if(T[L]&&T[L][k]) el.textContent=T[L][k];
   });
-  updateDNDLabel();updateBTLabel();updateChargerBtn();renderSettings();
+  updateDNDLabel();updateBTLabel();updateChargerBtn();updatePlayText();
+  renderSettings();
+  if (mode==='expanded'||mode==='media') renderIsland();
 }
-document.getElementById('btnZh').addEventListener('click',function(){setLang('zh')});
-document.getElementById('btnEn').addEventListener('click',function(){setLang('en')});
 
-// ===== STATE =====
-var state = {cpu:32,gpu:18,mem:45,cpuTemp:62,gpuTemp:48,battery:85,charging:true,dndOn:false,btConnected:true,btDevice:'AirPods Pro',playing:false,volume:65,brightness:80};
+// ===== STATE — exact from IslandState =====
+var S = {
+  cpu:32, gpu:18, mem:45, cpuTemp:62, gpuTemp:48,
+  battery:85, charging:true,
+  dndOn:false, btConnected:true, btDevice:'AirPods Pro',
+  playing:false, volume:65, brightness:80
+};
 var mode = 'collapsed';
-var autoTimer = null;
+var autoT = null;
+var progT = null;
 
 // ===== TOAST =====
 var toastEl = document.getElementById('toast');
-var toastTimer = null;
+var toastT = null;
 function toast(msg){
   toastEl.textContent = msg;
   toastEl.classList.add('in');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){toastEl.classList.remove('in')},2000);
+  clearTimeout(toastT);
+  toastT = setTimeout(function(){toastEl.classList.remove('in')},2000);
 }
 
-// ===== ISLAND DEMO =====
+// ===== DOM REFS =====
+var stage = document.getElementById('stage');
 var island = document.getElementById('island');
-var islandInner = document.getElementById('islandInner');
-var expPanel = document.getElementById('expPanel');
+var islandBody = document.getElementById('islandBody');
+var notchFlare = document.getElementById('notchFlare');
 
-// CSS class map for island modes
-var modeClass = {
-  collapsed:'s0', hovered:'s1', expanded:'s2',
-  volume:'sv', brightness:'sb', dnd:'sd', battery:'sbatt', connectivity:'sconn', media:'s2'
-};
-
+// ===== ISLAND RENDERING =====
 function renderIsland(){
-  // Reset
-  island.className = 'island ' + (modeClass[mode]||'s0');
-  var innerHTML = '';
-  expPanel.style.display = 'none';
-  islandInner.style.display = 'flex';
+  clearTimeout(autoT);clearInterval(progT);
+  var cls = ''; // extra classes for stage
+  var html = '';
+
+  // Reset island to base collapsed state
+  island.style.width = ''; island.style.height = '';
+  island.style.borderRadius = '';
 
   switch(mode){
     case 'collapsed':
-      innerHTML = '<div class="dot-row"><div class="dot cpu-d" id="demoCpuDot"></div><div class="dot mem-d" id="demoMemDot"></div></div>';
+      cls = 'collapsed';
+      html = '<div class="island-dots">'+
+        '<div class="island-dot" id="demoCpuDot"></div>'+
+        '<div class="island-dot" id="demoMemDot"></div>'+
+        '</div>';
       break;
+
     case 'hovered':
-      innerHTML = '<span class="stat-txt">CPU '+state.cpu+'%</span><span class="stat-txt">GPU '+state.gpu+'%</span><span class="stat-txt">MEM '+state.mem+'%</span>';
+      cls = 'hovered';
+      html = '<div class="island-labels">'+
+        '<span class="island-label">CPU '+S.cpu+'%</span>'+
+        '<span class="island-label">GPU '+S.gpu+'%</span>'+
+        '<span class="island-label">MEM '+S.mem+'%</span>'+
+        '</div>';
       break;
+
     case 'expanded':
-      islandInner.style.display = 'none';
-      expPanel.style.display = 'flex';
-      renderExpanded();
-      return;
+      cls = 'expanded';
+      island.style.width = '500px';
+      island.style.height = '130px';
+      island.style.borderRadius = '32px';
+      html = '<div class="exp-panel" style="display:flex">'+
+        '<div class="row1">'+
+          '<svg width="24" height="12" viewBox="0 0 24 12" style="flex-shrink:0"><rect x="0" y="0" width="21" height="12" rx="3" fill="none" stroke="'+(S.charging?'#34C759':'#8E8E93')+'" stroke-width="1.2"/><rect x="2" y="2" width="'+(17*S.battery/100)+'" height="8" rx="1.5" fill="'+(S.charging?'#34C759':S.battery<=20?'#FF3B30':'#8E8E93')+'"/><rect x="22" y="3" width="2" height="6" rx="1" fill="'+(S.charging?'#34C759':'#8E8E93')+'"/></svg>'+
+          '<span class="pwr-text">'+(S.charging?t('pwr.ac'):t('pwr.bat'))+'</span>'+
+          '<span class="pct-text'+(S.charging?' charging':'')+'">'+S.battery+'%</span>'+
+        '</div>'+
+        '<div class="row2">'+
+          buildStatCol(t('adapter'),S.charging?'18.5W':'—')+
+          buildStatCol(S.charging?t('bat.charge'):t('bat.output'),S.charging?'12.3W':'5.2W')+
+          buildStatCol('CPU',S.cpu+'%',S.cpuTemp+'°')+
+          buildStatCol('GPU',S.gpu+'%',S.gpuTemp+'°')+
+          '<div class="bt-col"><span class="stat-label">Bluetooth</span><span class="stat-val" style="font-size:.75rem">'+(S.btConnected?S.btDevice:'—')+'</span></div>'+
+        '</div>'+
+        '</div>';
+      break;
+
     case 'volume':
-      innerHTML = '<span class="hud-icon" style="font-size:.9rem">&#x1F50A;</span><div class="hud-bar-track"><div class="hud-bar-fill" style="width:'+state.volume+'%"></div></div><span class="hud-pct">'+state.volume+'%</span>';
+      cls = 'hud';
+      island.style.width = '360px'; island.style.height = '34px';
+      html = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0;margin-right:10px;fill:white"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>'+
+      '<div class="hud-track"><div class="hud-fill" style="width:'+S.volume+'%"></div></div>'+
+      '<span class="hud-pct">'+S.volume+'%</span>';
       break;
+
     case 'brightness':
-      innerHTML = '<span class="hud-icon" style="font-size:.9rem">&#x2600;</span><div class="hud-bar-track"><div class="hud-bar-fill bri" style="width:'+state.brightness+'%"></div></div><span class="hud-pct">'+state.brightness+'%</span>';
+      cls = 'hud';
+      island.style.width = '360px'; island.style.height = '34px';
+      html = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0;margin-right:10px;fill:white"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m-10-10h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>'+
+      '<div class="hud-track"><div class="hud-fill bri" style="width:'+S.brightness+'%"></div></div>'+
+      '<span class="hud-pct">'+S.brightness+'%</span>';
       break;
+
     case 'dnd':
-      state.dndOn = !state.dndOn;
-      updateDNDToggleFE();
-      innerHTML = '<span class="hud-icon" style="font-size:.9rem">&#x1F319;</span><span class="hud-label">'+(state.dndOn ? t('dnd.on') : t('dnd.off'))+'</span>';
-      toast(state.dndOn ? t('toast.dnd.on') : t('toast.dnd.off'));
+      cls = 'hud';
+      island.style.width = '360px'; island.style.height = '34px';
+      S.dndOn = !S.dndOn; updateDNDToggleFE();
+      html = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0;margin-right:10px;fill:'+(S.dndOn?'#5856D6':'white')+'"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>'+
+      (S.dndOn
+        ? '<span class="hud-label indigo">'+t('dnd.on')+'</span>'
+        : '<span class="hud-label off">'+t('dnd.off')+'</span>');
+      toast(S.dndOn?t('toast.dnd.on'):t('toast.dnd.off'));
       break;
+
     case 'battery':
-      innerHTML = '<span class="hud-icon" style="color:#22c55e">&#x1F50B;</span><span style="font-weight:600;color:#fff">'+state.battery+'%</span><span style="font-size:.72rem;color:rgba(255,255,255,.4);margin-left:6px">'+(state.charging?'18.5W':'5.2W')+'</span>';
-      toast(t('toast.battery')+': '+state.battery+'%');
+      cls = 'hud';
+      island.style.width = '360px'; island.style.height = '34px';
+      html = '<span style="font-weight:600;color:'+(S.charging?'var(--green)':'var(--white)')+';margin-right:10px">'+(S.charging?'充电中':'电池')+'</span>'+
+        '<span style="font-size:1rem;font-weight:600;color:var(--white)">'+S.battery+'%</span>'+
+        '<span style="font-size:.75rem;color:var(--gray);margin-left:8px">'+(S.charging?'18.5W':'5.2W')+'</span>';
+      toast(t('toast.bat')+': '+S.battery+'%');
       break;
+
     case 'connectivity':
-      innerHTML = '<span class="hud-icon">&#x1F3A7;</span><span class="hud-label">'+(state.btConnected ? state.btDevice : t('bt.disconnected'))+'</span>';
-      toast(state.btConnected ? t('toast.bt.on') : t('toast.bt.off'));
+      cls = 'hud';
+      island.style.width = '360px'; island.style.height = '34px';
+      html = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;flex-shrink:0;margin-right:10px;fill:'+(S.btConnected?'#34C759':'#8E8E93')+'"><path d="M12 1a9 9 0 00-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 00-9-9z"/></svg>'+
+      '<span class="hud-label">'+(S.btConnected?S.btDevice:t('bt.disconnected'))+'</span>';
+      toast(S.btConnected?t('toast.bt.on'):t('toast.bt.off'));
       break;
+
     case 'media':
-      islandInner.style.display = 'none';
-      expPanel.style.display = 'flex';
-      state.playing = true;
-      updatePlayBtnFE();
-      renderMediaPlayer();
-      return;
+      cls = 'expanded';
+      island.style.width = '500px';
+      island.style.height = '200px';
+      island.style.borderRadius = '32px';
+      S.playing = true; updatePlayText();
+      var prog = 45;
+      html = '<div class="media-exp" style="display:flex">'+
+        '<div class="m-row1">'+
+          '<div class="art">CD</div>'+
+          '<div class="track-info"><div class="song">Blinding Lights</div><div class="artist">The Weeknd</div></div>'+
+          '<div class="eq-bars"><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div><div class="eq-bar"></div></div>'+
+        '</div>'+
+        '<div class="m-row2">'+
+          '<span class="time">1:23</span>'+
+          '<div class="prog-track"><div class="prog-fill" id="mpBar" style="width:45%"></div></div>'+
+          '<span class="time end">-3:12</span>'+
+        '</div>'+
+        '<div class="m-row3">'+
+          '<button class="ctrl-btn" data-ma="prev">&#x23EE;</button>'+
+          '<button class="ctrl-btn play-btn" data-ma="play" id="mpPlayBtn">&#x23F8;</button>'+
+          '<button class="ctrl-btn" data-ma="next">&#x23ED;</button>'+
+        '</div>'+
+        '</div>';
+      // bind media controls after render
+      setTimeout(bindMediaCtrls,0);
+      // animate progress
+      progT = setInterval(function(){
+        prog = (prog + 0.25) % 100;
+        var bar = document.getElementById('mpBar');
+        if(bar) bar.style.width = prog+'%';
+      },300);
+      toast(t('toast.med'));
+      break;
   }
-  islandInner.innerHTML = innerHTML;
-  if (mode==='collapsed') updateDemoDots();
+
+  // Apply
+  stage.className = 'island-stage ' + cls;
+  islandBody.innerHTML = html;
+
+  // Update dots if collapsed
+  if (mode==='collapsed') updateDots();
+
+  // Set notch flare width
+  var flareW;
+  if (mode==='collapsed'||mode==='hovered') flareW = (mode==='hovered'?'203px':'180px');
+  else if (mode==='expanded'||mode==='media') flareW = '500px';
+  else flareW = '360px';
+  notchFlare.style.width = 'calc('+flareW+' + 2px)';
 
   // Auto-return HUD modes
-  clearTimeout(autoTimer);
   if (['volume','brightness','dnd','battery','connectivity'].indexOf(mode)>=0){
-    autoTimer = setTimeout(function(){setMode('collapsed')},2500);
+    autoT = setTimeout(function(){setMode('collapsed')},2500);
   }
 }
 
-function renderExpanded(){
-  expPanel.innerHTML =
-    '<div class="exp-grid">'+
-    '<div class="exp-card"><div class="ec-icon">&#x1F50B;</div><div class="ec-val">'+state.battery+'%</div><div class="ec-lbl">'+t('set.battery')+'</div><div class="ec-sub">'+(state.charging?'AC':'Battery')+'</div></div>'+
-    '<div class="exp-card"><div class="ec-icon">&#x26A1;</div><div class="ec-val">'+(state.charging?'18.5W':'5.2W')+'</div><div class="ec-lbl">Adapter</div></div>'+
-    '<div class="exp-card"><div class="ec-icon">&#x1F3A7;</div><div class="ec-val" style="font-size:.82rem">'+(state.btConnected?state.btDevice:'—')+'</div><div class="ec-lbl">Bluetooth</div></div>'+
-    '<div class="exp-card"><div class="ec-icon">&#x1F5A5;</div><div class="ec-val">'+state.cpu+'%</div><div class="ec-lbl">CPU</div><div class="ec-sub" style="color:'+(state.cpuTemp>70?'#ef4444':state.cpuTemp>50?'#f59e0b':'#22c55e')+'">'+state.cpuTemp+'&deg;C</div></div>'+
-    '<div class="exp-card"><div class="ec-icon">&#x1F3AE;</div><div class="ec-val">'+state.gpu+'%</div><div class="ec-lbl">GPU</div><div class="ec-sub" style="color:'+(state.gpuTemp>65?'#ef4444':state.gpuTemp>45?'#f59e0b':'#22c55e')+'">'+state.gpuTemp+'&deg;C</div></div>'+
-    '<div class="exp-card"><div class="ec-icon">&#x1F4BE;</div><div class="ec-val">'+state.mem+'%</div><div class="ec-lbl">Memory</div></div>'+
-    '</div>';
+function buildStatCol(label,val,sub){
+  var s = sub?'<span class="stat-sub">'+sub+'</span>':'';
+  return '<div class="stat-col"><span class="stat-label">'+label+'</span><span class="stat-val">'+val+'</span>'+s+'</div>';
 }
 
-var progInterval = null;
-function renderMediaPlayer(){
-  clearInterval(progInterval);
-  var prog = 45;
-  expPanel.innerHTML =
-    '<div class="media-row">'+
-    '<div class="media-art">CD</div>'+
-    '<div style="flex:1;text-align:center">'+
-    '<div class="media-song">Blinding Lights</div><div class="media-artist">The Weeknd</div>'+
-    '<div class="media-prog"><div class="media-prog-bar" id="mediaProgBar" style="width:45%"></div></div>'+
-    '<div class="media-ctrls">'+
-    '<button class="media-btn" data-maction="prev">Prev</button>'+
-    '<button class="media-btn play" data-maction="play" id="mpPlayBtn">Pause</button>'+
-    '<button class="media-btn" data-maction="next">Next</button>'+
-    '</div></div></div>';
-  // Bind media buttons
-  setTimeout(function(){
-    var btns = expPanel.querySelectorAll('[data-maction]');
-    for (var i=0;i<btns.length;i++){
-      btns[i].addEventListener('click',function(e){
-        e.stopPropagation();
-        var a = this.getAttribute('data-maction');
-        if (a==='play'){
-          state.playing = !state.playing;
-          this.textContent = state.playing ? 'Pause' : 'Play';
-          updatePlayBtnFE();
-          toast(state.playing ? t('toast.play') : t('toast.pause'));
-        } else if (a==='prev'){
-          toast(t('toast.prev'));
-        } else if (a==='next'){
-          toast(t('toast.next'));
-        }
-      });
-    }
-  },0);
-  // Animate progress bar
-  progInterval = setInterval(function(){
-    prog = (prog + 0.3) % 100;
-    var bar = document.getElementById('mediaProgBar');
-    if (bar) bar.style.width = prog + '%';
-  },300);
-}
-
-function updateDemoDots(){
+function updateDots(){
   var cd = document.getElementById('demoCpuDot');
   var md = document.getElementById('demoMemDot');
-  if (cd){cd.className='dot cpu-d'+(state.cpu>80?' crit':state.cpu>50?' warn':'');}
-  if (md){md.className='dot mem-d'+(state.mem>80?' crit':state.mem>60?' warn':'');}
+  if (cd){
+    cd.className = 'island-dot '+(S.cpu>80?'cpu-crit':S.cpu>50?'cpu-warn':'cpu-normal');
+  }
+  if (md){
+    md.className = 'island-dot '+(S.mem>80?'mem-crit':S.mem>60?'mem-warn':'mem-normal');
+  }
 }
 
+function bindMediaCtrls(){
+  var btns = islandBody.querySelectorAll('[data-ma]');
+  for (var i=0;i<btns.length;i++){
+    btns[i].addEventListener('click',function(e){
+      e.stopPropagation();
+      var a = this.getAttribute('data-ma');
+      if (a==='play'){
+        S.playing=!S.playing;
+        this.innerHTML = S.playing?'&#x23F8;':'&#x25B6;';
+        updatePlayText();
+        toast(S.playing?t('toast.play'):t('toast.pause'));
+      } else if (a==='prev') toast(t('toast.prev'));
+      else if (a==='next') toast(t('toast.next'));
+    });
+  }
+}
+
+// ===== ISLAND EVENTS =====
+island.addEventListener('mouseenter',function(){
+  if (mode==='collapsed') setMode('hovered');
+});
+island.addEventListener('mouseleave',function(){
+  if (mode==='hovered') setMode('collapsed');
+});
+island.addEventListener('click',function(e){
+  if (e.target.closest('[data-ma]')) return; // media button click
+  if (['volume','brightness','dnd','battery','connectivity','media'].indexOf(mode)>=0) return;
+  if (mode==='expanded'){ setMode('collapsed'); }
+  else if (mode==='collapsed'||mode==='hovered'){ setMode('expanded'); }
+});
+
+// ===== SET MODE =====
 function setMode(m){
   mode = m;
   renderIsland();
   highlightCtrl();
 }
 
-// Island event handlers
-island.addEventListener('mouseenter',function(){
-  if (mode==='collapsed'){ setMode('hovered'); }
-});
-island.addEventListener('mouseleave',function(){
-  if (mode==='hovered'){ setMode('collapsed'); }
-});
-island.addEventListener('click',function(e){
-  if (['volume','brightness','dnd','battery','connectivity','media'].indexOf(mode)>=0) return;
-  if (mode==='expanded'){ setMode('collapsed'); }
-  else if (mode==='collapsed'||mode==='hovered'){ setMode('expanded'); }
-});
-
-// Control buttons
-var ctrlBtns = document.querySelectorAll('#ctrlBar .ctrl-btn');
+// ===== CONTROL BUTTONS =====
+var btns = document.querySelectorAll('#ctrlBar .ctrl-btn');
 function highlightCtrl(){
-  for (var i=0;i<ctrlBtns.length;i++){
-    var dm = ctrlBtns[i].getAttribute('data-mode');
-    ctrlBtns[i].classList.toggle('act', dm===mode);
+  for (var i=0;i<btns.length;i++){
+    btns[i].classList.toggle('act',btns[i].getAttribute('data-mode')===mode);
   }
 }
-for (var i=0;i<ctrlBtns.length;i++){
-  ctrlBtns[i].addEventListener('click',function(){
+for (var i=0;i<btns.length;i++){
+  btns[i].addEventListener('click',function(){
     var m = this.getAttribute('data-mode');
-    if (m==='dnd'){ state.dndOn = !state.dndOn; updateDNDToggleFE(); }
+    if (m==='dnd'){ S.dndOn = !S.dndOn; updateDNDToggleFE(); }
     setMode(m);
-    var msgKey = 'toast.'+m;
-    if (m==='dnd') msgKey = state.dndOn?'toast.dnd.on':'toast.dnd.off';
-    toast(t(msgKey)||m);
+    var tk = 'toast.'+ (m==='expanded'?'exp':m==='collapsed'?'col':m==='volume'?'vol':m==='brightness'?'bri':m==='media'?'med':m);
+    if (m==='dnd') tk = S.dndOn?'toast.dnd.on':'toast.dnd.off';
+    toast(t(tk));
   });
 }
 
-// ===== FEATURE CARD INTERACTIONS =====
-var featCards = document.querySelectorAll('.feat-card');
-for (var i=0;i<featCards.length;i++){
-  featCards[i].addEventListener('click',function(){
+// ===== FEATURE CARDS =====
+var cards = document.querySelectorAll('.feat-card');
+for (var i=0;i<cards.length;i++){
+  cards[i].addEventListener('click',function(){
     var f = this.getAttribute('data-feat');
-    var demo = this.querySelector('.feat-demo');
-    if (demo){ demo.classList.add('flash'); setTimeout(function(){demo.classList.remove('flash')},500); }
     if (f==='i18n') return;
-    if (f==='media'){ state.playing=true; updatePlayBtnFE(); }
-    if (f==='dnd'){ state.dndOn = !state.dndOn; updateDNDToggleFE(); updateDNDLabel(); }
+    var demo = this.querySelector('.feat-demo');
+    if (demo){demo.classList.add('flash');setTimeout(function(){demo.classList.remove('flash')},500);}
+    if (f==='media'){S.playing=true;updatePlayText();}
+    if (f==='dnd'){S.dndOn=!S.dndOn;updateDNDToggleFE();updateDNDLabel();}
     setMode(f);
     document.getElementById('demo').scrollIntoView({behavior:'smooth'});
   });
 }
 
-// Feature mini-controls: toggle
+// DND toggle
 document.querySelectorAll('[data-toggle]').forEach(function(el){
   el.addEventListener('click',function(e){
     e.stopPropagation();
-    var t = this.getAttribute('data-toggle');
-    if (t==='dnd'){
-      state.dndOn = !state.dndOn;
-      this.classList.toggle('on',state.dndOn);
-      updateDNDLabel();
-      toast(state.dndOn ? t('toast.dnd.on') : t('toast.dnd.off'));
-    }
+    S.dndOn = !S.dndOn;
+    this.classList.toggle('on',S.dndOn);
+    updateDNDLabel();
+    toast(S.dndOn?t('toast.dnd.on'):t('toast.dnd.off'));
   });
 });
 function updateDNDToggleFE(){
-  var tog = document.querySelector('[data-toggle="dnd"]');
-  if (tog) tog.classList.toggle('on',state.dndOn);
+  var t = document.querySelector('[data-toggle="dnd"]');
+  if (t) t.classList.toggle('on',S.dndOn);
 }
 
-// Feature mini-controls: sliders
+// Sliders
 document.querySelectorAll('[data-slider]').forEach(function(el){
   el.addEventListener('click',function(e){
     e.stopPropagation();
-    var rect = this.getBoundingClientRect();
-    var pct = Math.round((e.clientX - rect.left) / rect.width * 100);
+    var r = this.getBoundingClientRect();
+    var p = Math.round((e.clientX - r.left)/r.width*100);
     var fill = this.querySelector('.f-slider-fill');
-    if (fill) fill.style.width = pct + '%';
+    if (fill) fill.style.width = p+'%';
     var type = this.getAttribute('data-slider');
-    if (type==='vol'){ state.volume = pct; var el2=document.getElementById('fVolPct'); if(el2)el2.textContent=pct+'%'; }
-    if (type==='bri') state.brightness = pct;
+    if (type==='vol'){S.volume=p;var e2=document.getElementById('fVolPct');if(e2)e2.textContent=p+'%';}
+    if (type==='bri') S.brightness=p;
     if (mode===type||mode==='volume'||mode==='brightness') renderIsland();
   });
 });
@@ -771,56 +1007,48 @@ document.querySelectorAll('[data-range]').forEach(function(el){
   el.addEventListener('input',function(e){
     e.stopPropagation();
     var v = parseInt(this.value);
-    var t = this.getAttribute('data-range');
-    var fill = document.querySelector('[data-slider="'+t+'"] .f-slider-fill');
-    if (fill) fill.style.width = v + '%';
-    if (t==='vol'){ state.volume = v; var el2=document.getElementById('fVolPct'); if(el2)el2.textContent=v+'%'; }
-    if (t==='bri') state.brightness = v;
-    if (mode===t||mode==='volume'||mode==='brightness') renderIsland();
+    var type = this.getAttribute('data-range');
+    var fill = document.querySelector('[data-slider="'+type+'"] .f-slider-fill');
+    if (fill) fill.style.width = v+'%';
+    if (type==='vol'){S.volume=v;var e2=document.getElementById('fVolPct');if(e2)e2.textContent=v+'%';}
+    if (type==='bri') S.brightness=v;
+    if (mode===type||mode==='volume'||mode==='brightness') renderIsland();
   });
-  el.addEventListener('click',function(e){ e.stopPropagation(); });
+  el.addEventListener('click',function(e){e.stopPropagation();});
 });
 
-// Feature mini-controls: buttons
-document.querySelectorAll('[data-action]').forEach(function(el){
+// Feature card buttons
+document.querySelectorAll('[data-act]').forEach(function(el){
   el.addEventListener('click',function(e){
     e.stopPropagation();
-    var a = this.getAttribute('data-action');
+    var a = this.getAttribute('data-act');
     switch(a){
-      case 'play':
-        state.playing = !state.playing;
-        this.textContent = state.playing ? 'Pause' : 'Play';
-        updatePlayBtnFE();
-        toast(state.playing ? t('toast.play') : t('toast.pause'));
-        break;
-      case 'prev': toast(t('toast.prev')); break;
-      case 'next': toast(t('toast.next')); break;
+      case 'play': S.playing=!S.playing;updatePlayText();toast(S.playing?t('toast.play'):t('toast.pause'));break;
+      case 'prev': toast(t('toast.prev'));break;
+      case 'next': toast(t('toast.next'));break;
       case 'charger':
-        state.charging = !state.charging;
-        if (state.battery>80&&!state.charging) state.battery = Math.max(0,state.battery-5);
-        document.getElementById('fBattPct').textContent = state.battery+'%';
+        S.charging=!S.charging;
+        if(S.battery>80&&!S.charging)S.battery=Math.max(0,S.battery-5);
+        document.getElementById('fBattPct').textContent=S.battery+'%';
         updateChargerBtn();
-        if (mode==='expanded'||mode==='battery') renderIsland();
-        toast(state.charging ? t('toast.charger.on') : t('toast.charger.off'));
+        if(mode==='expanded'||mode==='battery')renderIsland();
+        toast(S.charging?t('toast.charger.on'):t('toast.charger.off'));
         break;
       case 'btToggle':
-        state.btConnected = !state.btConnected;
-        updateBTLabel();
-        if (mode==='expanded'||mode==='connectivity') renderIsland();
-        toast(state.btConnected ? t('toast.bt.on') : t('toast.bt.off'));
+        S.btConnected=!S.btConnected;updateBTLabel();
+        if(mode==='expanded'||mode==='connectivity')renderIsland();
+        toast(S.btConnected?t('toast.bt.on'):t('toast.bt.off'));
         break;
       case 'refresh':
-        state.cpu = Math.floor(Math.random()*35+10);
-        state.gpu = Math.floor(Math.random()*30+5);
-        state.mem = Math.floor(Math.random()*25+30);
-        state.cpuTemp = Math.floor(Math.random()*20+45);
-        state.gpuTemp = Math.floor(Math.random()*20+35);
-        document.getElementById('fCpu').textContent = state.cpu+'%';
-        document.getElementById('fGpu').textContent = state.gpu+'%';
-        document.getElementById('fMem').textContent = state.mem+'%';
-        document.getElementById('fTemp').innerHTML = state.cpuTemp+'&deg;C';
-        if (mode==='expanded') renderIsland();
-        if (mode==='collapsed') updateDemoDots();
+        S.cpu=Math.floor(Math.random()*35+10);S.gpu=Math.floor(Math.random()*30+5);
+        S.mem=Math.floor(Math.random()*25+30);S.cpuTemp=Math.floor(Math.random()*20+45);
+        S.gpuTemp=Math.floor(Math.random()*20+35);
+        document.getElementById('fCpu').textContent=S.cpu+'%';
+        document.getElementById('fGpu').textContent=S.gpu+'%';
+        document.getElementById('fMem').textContent=S.mem+'%';
+        document.getElementById('fTemp').textContent=S.cpuTemp+'°';
+        if(mode==='expanded')renderIsland();
+        if(mode==='collapsed')updateDots();
         toast(t('toast.refresh'));
         break;
       case 'langZh': setLang('zh'); toast(t('toast.lang')); break;
@@ -828,158 +1056,170 @@ document.querySelectorAll('[data-action]').forEach(function(el){
     }
   });
 });
-function updatePlayBtnFE(){
+
+function updatePlayText(){
   var b = document.getElementById('fPlayBtn');
-  if (b) b.textContent = state.playing ? 'Pause' : 'Play';
+  if (b) b.textContent = S.playing?'暂停':'播放';
 }
 function updateChargerBtn(){
   var b = document.getElementById('fChargerBtn');
-  if (b) b.textContent = state.charging ? t('charger.unplug') : t('charger.plug');
+  if (b) b.textContent = S.charging?t('feat.bat.unplug'):t('feat.bat.plug');
 }
 function updateDNDLabel(){
   var l = document.getElementById('fDndLabel');
-  if (l) l.textContent = state.dndOn ? t('dnd.on') : t('dnd.off');
+  if (l) l.textContent = S.dndOn?t('feat.dnd.on'):t('feat.dnd.off');
 }
 function updateBTLabel(){
   var l = document.getElementById('fBtLabel');
-  if (l) l.textContent = state.btConnected ? t('bt.connected') : t('bt.disconnected');
+  if (l) l.textContent = S.btConnected?t('feat.bt.connected'):t('bt.disconnected');
   var b = document.getElementById('fBtBtn');
-  if (b) b.textContent = state.btConnected ? t('bt.btn.disc') : t('bt.btn.conn');
+  if (b) b.textContent = S.btConnected?t('feat.bt.disc'):t('feat.bt.conn');
+  var d = document.getElementById('fBtDot');
+  if (d) d.style.background = S.btConnected?'var(--green)':'var(--gray)';
 }
 
 // ===== SETTINGS =====
 var setTabs = ['general','battery','connectivity','focus','display','sound','nowplaying'];
 var curSet = 'general';
 
-var setData = {
+var setConf = {
   general:{zh:[
-    {l:'开机自启',d:'通过 SMAppService 注册登录项',type:'toggle',v:true},
-    {l:'触觉反馈',d:'悬停/点击时触发 NSHapticFeedback',type:'toggle',v:true},
-    {l:'全屏悬停触发',d:'在全屏应用中也允许悬停展开',type:'toggle',v:false},
-    {l:'刘海圆角半径',d:'4–16 pt，默认 7pt',type:'slider',v:7,min:4,max:16,step:0.5},
+    {l:'set.launch',d:'set.launch.d',tp:'tog',v:true},
+    {l:'set.haptic',d:'set.haptic.d',tp:'tog',v:true},
+    {l:'set.fshover',d:'set.fshover.d',tp:'tog',v:false},
+    {l:'set.notch',d:'set.notch.d',tp:'sli',v:7,mn:4,mx:16,st:0.5},
   ],en:[
-    {l:'Launch at Login',d:'Register via SMAppService',type:'toggle',v:true},
-    {l:'Haptic Feedback',d:'NSHapticFeedback on hover/click',type:'toggle',v:true},
-    {l:'Fullscreen Hover',d:'Allow hover expansion in fullscreen apps',type:'toggle',v:false},
-    {l:'Notch Curve Radius',d:'4–16 pt, default 7pt',type:'slider',v:7,min:4,max:16,step:0.5},
+    {l:'set.launch',d:'set.launch.d',tp:'tog',v:true},
+    {l:'set.haptic',d:'set.haptic.d',tp:'tog',v:true},
+    {l:'set.fshover',d:'set.fshover.d',tp:'tog',v:false},
+    {l:'set.notch',d:'set.notch.d',tp:'sli',v:7,mn:4,mx:16,st:0.5},
   ]},
   battery:{zh:[
-    {l:'启用电池提醒',type:'toggle',v:true},{l:'插拔提醒',type:'toggle',v:true},
-    {l:'显示百分比',type:'toggle',v:true},{l:'驻留时长',d:'1–10 秒',type:'slider',v:3,min:1,max:10,step:0.5},
-    {l:'低电量阈值',d:'5–50%',type:'slider',v:20,min:5,max:50,step:5},
+    {l:'set.bat.enable',tp:'tog',v:true},{l:'set.bat.plug',tp:'tog',v:true},
+    {l:'set.bat.pct',tp:'tog',v:true},
+    {l:'set.bat.dwell',d:'set.bat.dwell.d',tp:'sli',v:3,mn:1,mx:10,st:0.5},
+    {l:'set.bat.low',d:'set.bat.low.d',tp:'sli',v:20,mn:5,mx:50,st:5},
   ],en:[
-    {l:'Enable Battery Alerts',type:'toggle',v:true},{l:'Plug/Unplug Notifications',type:'toggle',v:true},
-    {l:'Show Percentage',type:'toggle',v:true},{l:'Dwell Time',d:'1–10 s',type:'slider',v:3,min:1,max:10,step:0.5},
-    {l:'Low Battery Threshold',d:'5–50%',type:'slider',v:20,min:5,max:50,step:5},
+    {l:'set.bat.enable',tp:'tog',v:true},{l:'set.bat.plug',tp:'tog',v:true},
+    {l:'set.bat.pct',tp:'tog',v:true},
+    {l:'set.bat.dwell',d:'set.bat.dwell.d',tp:'sli',v:3,mn:1,mx:10,st:0.5},
+    {l:'set.bat.low',d:'set.bat.low.d',tp:'sli',v:20,mn:5,mx:50,st:5},
   ]},
   connectivity:{zh:[
-    {l:'启用蓝牙提醒',type:'toggle',v:true},{l:'显示设备名称',type:'toggle',v:true},
-    {l:'驻留时长',d:'1–10 秒',type:'slider',v:3,min:1,max:10,step:0.5},
+    {l:'set.bt.enable',tp:'tog',v:true},{l:'set.bt.name',tp:'tog',v:true},
+    {l:'set.bt.dwell',d:'set.bt.dwell.d',tp:'sli',v:3,mn:1,mx:10,st:0.5},
   ],en:[
-    {l:'Enable Bluetooth Alerts',type:'toggle',v:true},{l:'Show Device Name',type:'toggle',v:true},
-    {l:'Dwell Time',d:'1–10 s',type:'slider',v:3,min:1,max:10,step:0.5},
+    {l:'set.bt.enable',tp:'tog',v:true},{l:'set.bt.name',tp:'tog',v:true},
+    {l:'set.bt.dwell',d:'set.bt.dwell.d',tp:'sli',v:3,mn:1,mx:10,st:0.5},
   ]},
   focus:{zh:[
-    {l:'启用专注切换',type:'toggle',v:true},{l:'驻留时长',d:'1–10 秒',type:'slider',v:5,min:1,max:10,step:0.5},
-    {l:'进入时播放声音',d:'系统 Glass 音效',type:'toggle',v:false},{l:'隐藏标签',type:'toggle',v:false},
+    {l:'set.foc.enable',tp:'tog',v:true},
+    {l:'set.foc.dwell',d:'set.foc.dwell.d',tp:'sli',v:5,mn:1,mx:10,st:0.5},
+    {l:'set.foc.sound',d:'set.foc.sound.d',tp:'tog',v:false},
+    {l:'set.foc.hide',tp:'tog',v:false},
   ],en:[
-    {l:'Enable Focus Toggle',type:'toggle',v:true},{l:'Dwell Time',d:'1–10 s',type:'slider',v:5,min:1,max:10,step:0.5},
-    {l:'Play Sound on Enter',d:'System Glass sound',type:'toggle',v:false},{l:'Hide Label',type:'toggle',v:false},
+    {l:'set.foc.enable',tp:'tog',v:true},
+    {l:'set.foc.dwell',d:'set.foc.dwell.d',tp:'sli',v:5,mn:1,mx:10,st:0.5},
+    {l:'set.foc.sound',d:'set.foc.sound.d',tp:'tog',v:false},
+    {l:'set.foc.hide',tp:'tog',v:false},
   ]},
   display:{zh:[
-    {l:'启用亮度弹窗',type:'toggle',v:true},{l:'驻留时长',d:'1–5 秒',type:'slider',v:2,min:1,max:5,step:0.5},
-    {l:'步长',type:'slider',v:6,min:1,max:32,step:1},
+    {l:'set.dis.enable',tp:'tog',v:true},
+    {l:'set.dis.dwell',d:'set.dis.dwell.d',tp:'sli',v:2,mn:1,mx:5,st:0.5},
+    {l:'set.dis.step',d:'set.dis.step.d',tp:'sli',v:6,mn:1,mx:32,st:1},
   ],en:[
-    {l:'Enable Brightness Overlay',type:'toggle',v:true},{l:'Dwell Time',d:'1–5 s',type:'slider',v:2,min:1,max:5,step:0.5},
-    {l:'Step Size',type:'slider',v:6,min:1,max:32,step:1},
+    {l:'set.dis.enable',tp:'tog',v:true},
+    {l:'set.dis.dwell',d:'set.dis.dwell.d',tp:'sli',v:2,mn:1,mx:5,st:0.5},
+    {l:'set.dis.step',d:'set.dis.step.d',tp:'sli',v:6,mn:1,mx:32,st:1},
   ]},
   sound:{zh:[
-    {l:'启用音量弹窗',type:'toggle',v:true},{l:'驻留时长',d:'1–5 秒',type:'slider',v:2,min:1,max:5,step:0.5},
-    {l:'步长',type:'slider',v:6,min:1,max:32,step:1},
+    {l:'set.snd.enable',tp:'tog',v:true},
+    {l:'set.snd.dwell',d:'set.snd.dwell.d',tp:'sli',v:2,mn:1,mx:5,st:0.5},
+    {l:'set.snd.step',d:'set.snd.step.d',tp:'sli',v:6,mn:1,mx:32,st:1},
   ],en:[
-    {l:'Enable Volume Overlay',type:'toggle',v:true},{l:'Dwell Time',d:'1–5 s',type:'slider',v:2,min:1,max:5,step:0.5},
-    {l:'Step Size',type:'slider',v:6,min:1,max:32,step:1},
+    {l:'set.snd.enable',tp:'tog',v:true},
+    {l:'set.snd.dwell',d:'set.snd.dwell.d',tp:'sli',v:2,mn:1,mx:5,st:0.5},
+    {l:'set.snd.step',d:'set.snd.step.d',tp:'sli',v:6,mn:1,mx:32,st:1},
   ]},
   nowplaying:{zh:[
-    {l:'启用正在播放',type:'toggle',v:true},{l:'显示专辑封面',type:'toggle',v:true},
-    {l:'显示进度条',type:'toggle',v:true},{l:'轮询间隔',d:'0.5–5 秒',type:'slider',v:1,min:0.5,max:5,step:0.5},
+    {l:'set.np.enable',tp:'tog',v:true},{l:'set.np.art',tp:'tog',v:true},
+    {l:'set.np.prog',tp:'tog',v:true},
+    {l:'set.np.poll',d:'set.np.poll.d',tp:'sli',v:1,mn:0.5,mx:5,st:0.5},
   ],en:[
-    {l:'Enable Now Playing',type:'toggle',v:true},{l:'Show Album Artwork',type:'toggle',v:true},
-    {l:'Show Progress Bar',type:'toggle',v:true},{l:'Polling Interval',d:'0.5–5 s',type:'slider',v:1,min:0.5,max:5,step:0.5},
+    {l:'set.np.enable',tp:'tog',v:true},{l:'set.np.art',tp:'tog',v:true},
+    {l:'set.np.prog',tp:'tog',v:true},
+    {l:'set.np.poll',d:'set.np.poll.d',tp:'sli',v:1,mn:0.5,mx:5,st:0.5},
   ]}
 };
 
 function renderSettings(){
-  // Sidebar
-  var sideHTML = '';
+  var side = document.getElementById('setSide');
+  var main = document.getElementById('setMain');
+  var sh = '';
   for (var i=0;i<setTabs.length;i++){
-    sideHTML += '<div class="set-side-item'+(setTabs[i]===curSet?' sel':'')+'" data-stab="'+setTabs[i]+'">'+t('set.'+setTabs[i])+'</div>';
+    sh += '<div class="set-side-item'+(setTabs[i]===curSet?' sel':'')+'" data-stab="'+setTabs[i]+'">'+t('set.'+setTabs[i])+'</div>';
   }
-  document.getElementById('setSide').innerHTML = sideHTML;
-  // Bind sidebar clicks
-  var items = document.querySelectorAll('#setSide .set-side-item');
-  for (var i=0;i<items.length;i++){
-    items[i].addEventListener('click',function(){
+  side.innerHTML = sh;
+  var sits = side.querySelectorAll('.set-side-item');
+  for (var i=0;i<sits.length;i++){
+    sits[i].addEventListener('click',function(){
       curSet = this.getAttribute('data-stab');
       renderSettings();
     });
   }
-  // Main content
-  var data = (setData[curSet]||setData.general)[L] || setData.general.en;
-  var mainHTML = '';
-  for (var i=0;i<data.length;i++){
-    var item = data[i];
-    mainHTML += '<div class="set-row"><div><div class="set-row-lbl">'+item.l+'</div>';
-    if (item.d) mainHTML += '<div class="set-row-sub">'+item.d+'</div>';
-    mainHTML += '</div>';
-    if (item.type==='toggle'){
-      mainHTML += '<div class="f-toggle'+(item.v?' on':'')+'" data-stoggle="'+i+'"></div>';
-    } else if (item.type==='slider'){
-      mainHTML += '<input type="range" min="'+item.min+'" max="'+item.max+'" step="'+item.step+'" value="'+item.v+'" class="set-slider" data-sslider="'+i+'">';
+
+  var conf = (setConf[curSet]||setConf.general)[L]||setConf.general.en;
+  var mh = '';
+  for (var i=0;i<conf.length;i++){
+    var c = conf[i];
+    mh += '<div class="set-row"><div><div class="set-row-lbl">'+t(c.l)+'</div>';
+    if (c.d) mh += '<div class="set-row-sub">'+t(c.d)+'</div>';
+    mh += '</div>';
+    if (c.tp==='tog'){
+      mh += '<div class="f-toggle'+(c.v?' on':'')+'" data-stog="'+i+'"></div>';
+    } else if (c.tp==='sli'){
+      mh += '<input type="range" min="'+c.mn+'" max="'+c.mx+'" step="'+c.st+'" value="'+c.v+'" class="set-slider" data-ssli="'+i+'">';
     }
-    mainHTML += '</div>';
+    mh += '</div>';
   }
-  document.getElementById('setMain').innerHTML = mainHTML;
-  // Bind toggle/slider events
+  main.innerHTML = mh;
+
   setTimeout(function(){
-    var toggles = document.querySelectorAll('#setMain [data-stoggle]');
-    for (var i=0;i<toggles.length;i++){
-      toggles[i].addEventListener('click',function(){this.classList.toggle('on');toast(t('toast.set'))});
+    var togs = main.querySelectorAll('[data-stog]');
+    for (var i=0;i<togs.length;i++){
+      togs[i].addEventListener('click',function(){this.classList.toggle('on');toast(t('toast.set'))});
     }
-    var sliders = document.querySelectorAll('#setMain [data-sslider]');
-    for (var i=0;i<sliders.length;i++){
-      sliders[i].addEventListener('input',function(){toast(t('toast.set')+': '+this.value)});
+    var slis = main.querySelectorAll('[data-ssli]');
+    for (var i=0;i<slis.length;i++){
+      slis[i].addEventListener('input',function(){toast(t('toast.set')+': '+this.value)});
     }
   },0);
 }
 
 // ===== SCROLL REVEAL =====
 function initScroll(){
-  var obs = new IntersectionObserver(function(entries){
-    for (var i=0;i<entries.length;i++){if(entries[i].isIntersecting) entries[i].target.classList.add('seen');}
-  },{threshold:0.12});
-  document.querySelectorAll('.feat-card,.inst-card,.set-demo,.mac-frame').forEach(function(el){
+  var obs = new IntersectionObserver(function(es){
+    for(var i=0;i<es.length;i++){if(es[i].isIntersecting)es[i].target.classList.add('seen');}
+  },{threshold:.12});
+  document.querySelectorAll('.feat-card,.inst-card,.set-demo,.mac').forEach(function(el){
     el.classList.add('sr');obs.observe(el);
   });
   setTimeout(function(){
     document.querySelectorAll('.sr').forEach(function(el){
-      var r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight) el.classList.add('seen');
+      if(el.getBoundingClientRect().top<window.innerHeight)el.classList.add('seen');
     });
   },400);
 }
 
-// ===== SIMULATED LIVE UPDATES =====
+// ===== LIVE UPDATES =====
 function liveUpdate(){
-  state.cpu = Math.floor(Math.random()*30+12);
-  state.mem = Math.floor(Math.random()*22+33);
-  state.cpuTemp = Math.floor(Math.random()*18+48);
-  var fc = document.getElementById('fCpu'), fm = document.getElementById('fMem'), ft = document.getElementById('fTemp');
-  if (fc) fc.textContent = state.cpu+'%';
-  if (fm) fm.textContent = state.mem+'%';
-  if (ft) ft.innerHTML = state.cpuTemp+'&deg;C';
-  if (mode==='collapsed') updateDemoDots();
-  if (mode==='expanded') renderIsland();
+  S.cpu = Math.floor(Math.random()*30+12);
+  S.mem = Math.floor(Math.random()*22+33);
+  S.cpuTemp = Math.floor(Math.random()*18+48);
+  var fc=document.getElementById('fCpu'),fm=document.getElementById('fMem'),ft=document.getElementById('fTemp');
+  if(fc)fc.textContent=S.cpu+'%';if(fm)fm.textContent=S.mem+'%';if(ft)ft.textContent=S.cpuTemp+'°';
+  if(mode==='collapsed')updateDots();
+  if(mode==='expanded')renderIsland();
 }
 
 // ===== INIT =====
@@ -989,12 +1229,8 @@ function init(){
   initScroll();
   setInterval(liveUpdate,3500);
 }
-
-if (document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded',init);
-} else {
-  init();
-}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
+else{init();}
 
 })();
 </script>
