@@ -15,7 +15,18 @@ class BrightnessMonitor: ObservableObject {
     
     private var hideTimer: Timer?
     private var hardwareAnimator: Timer?
+    private var syncTimer: Timer?
     private var eventTap: CFMachPort?
+
+    private var isEnabled: Bool { UserDefaults.standard.bool(forKey: "brightness_enabled") }
+    private var displayDuration: Double {
+        let val = UserDefaults.standard.double(forKey: "brightness_duration")
+        return val > 0 ? val : 2.0
+    }
+    private var stepSize: Double {
+        let val = UserDefaults.standard.double(forKey: "brightness_step")
+        return val > 0 ? val : 0.0625
+    }
     
     private typealias SetBrightnessFunc = @convention(c) (CGDirectDisplayID, Float) -> Int32
     private typealias GetBrightnessFunc = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
@@ -38,11 +49,35 @@ class BrightnessMonitor: ObservableObject {
     }
     
     func start() {
+        if UserDefaults.standard.object(forKey: "brightness_enabled") == nil {
+            UserDefaults.standard.set(true, forKey: "brightness_enabled")
+            UserDefaults.standard.set(2.0, forKey: "brightness_duration")
+            UserDefaults.standard.set(0.0625, forKey: "brightness_step")
+        }
+
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         if !AXIsProcessTrustedWithOptions(options) { return }
-        
+
         updateBrightnessValue()
         setupEventTap()
+        startSyncTimer()
+    }
+    
+    // --- 【新增】后台状态同步 ---
+    private func startSyncTimer() {
+        syncTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            // 关键：只有在我们的插值动画不在运行，且没有显示亮度 UI 时才去同步
+            // 避免抢夺用户的交互控制权
+            if self.hardwareAnimator == nil && !self.showBrightnessUI {
+                self.updateBrightnessValue()
+            }
+        } // ⬅️ 截图里的报错就是因为少了这一个闭合括号！！！
+        
+        // 加入 common 模式防止主线程其他 UI 交互阻塞定时器
+        if let syncTimer = syncTimer {
+            RunLoop.main.add(syncTimer, forMode: .common)
+        }
     }
     
     private func setupEventTap() {
@@ -55,8 +90,8 @@ class BrightnessMonitor: ObservableObject {
                     if (((nsEvent.data1 & 0x0000FFFF) & 0xFF00) >> 8) == 0xA {
                         if keyCode == 2 || keyCode == 3 {
                             let monitor = Unmanaged<BrightnessMonitor>.fromOpaque(refcon!).takeUnretainedValue()
-                            // 原生标准步长 1/16
-                            monitor.adjustBrightness(increment: keyCode == 2 ? 0.0625 : -0.0625)
+                            guard monitor.isEnabled else { return Unmanaged.passUnretained(event) }
+                            monitor.adjustBrightness(increment: keyCode == 2 ? monitor.stepSize : -monitor.stepSize)
                             return nil
                         }
                     }
@@ -76,19 +111,28 @@ class BrightnessMonitor: ObservableObject {
     }
     
     private func adjustBrightness(increment: Double) {
+        var realBrightness: Float = 0.0
+        if let getBrightness = self.getBrightnessNative {
+            _ = getBrightness(CGMainDisplayID(), &realBrightness)
+            let actualValue = Double(realBrightness)
+            
+            if abs(self.internalTargetBrightness - actualValue) > 0.01 {
+                self.internalTargetBrightness = actualValue
+                self.currentPhysicalBrightness = actualValue
+            }
+        }
+        
         internalTargetBrightness = max(0.0, min(1.0, internalTargetBrightness + increment))
         let targetValue = internalTargetBrightness
         
-        // 1. 瞬间刷新 UI，进度条绝对跟手
         DispatchQueue.main.async {
             self.brightness = targetValue
             self.showBrightnessUI = true
             self.hideTimer?.invalidate()
-            self.hideTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [weak self] _ in
+            self.hideTimer = Timer.scheduledTimer(withTimeInterval: self.displayDuration, repeats: false) { [weak self] _ in
                 self?.showBrightnessUI = false
             }
             
-            // 2. 启动原生级别的硬件平滑插值引擎
             self.startHardwareAnimator()
         }
     }
@@ -96,20 +140,17 @@ class BrightnessMonitor: ObservableObject {
     private func startHardwareAnimator() {
         if hardwareAnimator != nil { return }
         
-        // 以 60Hz 的完美帧率运行插值动画
         hardwareAnimator = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] timer in
             guard let self = self else {
                 timer.invalidate()
                 return
             }
             
-            // 锁定当前目标值，准备交给后台派发
             let target = self.internalTargetBrightness
             
             self.hardwareQueue.async {
                 let diff = target - self.currentPhysicalBrightness
                 
-                // 差值极小（已达到目标），终止动画释放系统资源
                 if abs(diff) < 0.001 {
                     self.currentPhysicalBrightness = target
                     if let setB = self.setBrightnessNative {
@@ -122,9 +163,6 @@ class BrightnessMonitor: ObservableObject {
                     return
                 }
                 
-                // --- 【原生手感的灵魂】 ---
-                // 指数平滑（Exponential Smoothing）
-                // 每次逼近剩余差距的 25%。无论你点按多快，物理屏幕都自带极致丝滑的缓动刹车 (Ease-Out)
                 self.currentPhysicalBrightness += diff * 0.25
                 
                 if let setB = self.setBrightnessNative {
@@ -132,8 +170,6 @@ class BrightnessMonitor: ObservableObject {
                 }
             }
         }
-        
-        // 将 Timer 加入 .common 模式，防止你在拖拽其他窗口或进行复杂交互时动画被系统挂起掉帧
         RunLoop.main.add(hardwareAnimator!, forMode: .common)
     }
     
@@ -144,11 +180,13 @@ class BrightnessMonitor: ObservableObject {
                 _ = getBrightness(CGMainDisplayID(), &currentRealBrightness)
                 
                 let actualValue = Double(currentRealBrightness)
-                self.currentPhysicalBrightness = actualValue
                 
                 DispatchQueue.main.async {
-                    self.internalTargetBrightness = actualValue
-                    self.brightness = actualValue
+                    if abs(self.brightness - actualValue) > 0.01 {
+                        self.internalTargetBrightness = actualValue
+                        self.currentPhysicalBrightness = actualValue
+                        self.brightness = actualValue
+                    }
                 }
             }
         }

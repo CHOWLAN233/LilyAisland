@@ -10,6 +10,7 @@ enum IslandMode {
     case brightness
     case dnd
     case battery
+    case connectivity
 }
 
 class IslandState: ObservableObject {
@@ -22,6 +23,7 @@ class IslandState: ObservableObject {
     var brightness = BrightnessMonitor()
     var dnd = DNDMonitor()
     var battery = BatteryMonitor()
+    var connectivity = ConnectivityMonitor()
     
     private var mediaPauseTimer: Timer?
     
@@ -31,7 +33,6 @@ class IslandState: ObservableObject {
     let hoveredHeight: CGFloat = 36
     let expandedWidth: CGFloat = 500
     
-    // 🌟 动态高度：音乐和电池面板完全独立
     var expandedHeight: CGFloat {
         if isMediaActive {
             return 200
@@ -70,6 +71,8 @@ class IslandState: ObservableObject {
         dnd.$showDNDUI.sink { [weak self] show in DispatchQueue.main.async { withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) { if show { self?.mode = .dnd } else if self?.mode == .dnd { self?.mode = .collapsed } }; self?.objectWillChange.send() } }.store(in: &cancellables)
         
         battery.$showBatteryUI.sink { [weak self] show in DispatchQueue.main.async { withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) { if show { self?.mode = .battery } else if self?.mode == .battery { self?.mode = .collapsed } }; self?.objectWillChange.send() } }.store(in: &cancellables)
+
+        connectivity.$showConnectivityUI.sink { [weak self] show in DispatchQueue.main.async { withAnimation(.spring(response: 0.4, dampingFraction: 1.0)) { if show { self?.mode = .connectivity } else if self?.mode == .connectivity { self?.mode = .collapsed } }; self?.objectWillChange.send() } }.store(in: &cancellables)
     }
     
     private func handleMediaStateChange() {
@@ -100,7 +103,7 @@ class IslandState: ObservableObject {
         case .collapsed: return isMediaActive ? playingCompactWidth : collapsedWidth
         case .hovered: return isMediaActive ? playingHoveredWidth : hoveredWidth
         case .expanded: return expandedWidth
-        case .volume, .brightness, .dnd, .battery: return volumeWidth
+        case .volume, .brightness, .dnd, .battery, .connectivity: return volumeWidth
         }
     }
     
@@ -109,7 +112,7 @@ class IslandState: ObservableObject {
         case .collapsed: return isMediaActive ? playingCompactHeight : islandHeight
         case .hovered: return isMediaActive ? playingHoveredHeight : hoveredHeight
         case .expanded: return expandedHeight
-        case .volume, .brightness, .dnd, .battery: return volumeHeight
+        case .volume, .brightness, .dnd, .battery, .connectivity: return volumeHeight
         }
     }
 }
@@ -119,15 +122,15 @@ struct LilyAislandApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
-        MenuBarExtra("Lily Island", systemImage: "sparkles") {
-            Button("偏好设置...") {
+        MenuBarExtra(LocalizationManager.shared.loc(.menu_app_name), systemImage: "sparkles") {
+            Button(LocalizationManager.shared.loc(.menu_preferences)) {
                 appDelegate.showSettingsWindow()
             }
             .keyboardShortcut(",", modifiers: .command)
-            
+
             Divider()
-            
-            Button("退出 Lily Island") {
+
+            Button(LocalizationManager.shared.loc(.menu_quit)) {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q", modifiers: .command)
@@ -152,7 +155,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         state.brightness.start()
         state.dnd.start()
         state.battery.start()
-        
+        state.connectivity.start()
+
         setupIslandWindow()
     }
     
@@ -162,7 +166,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let canvasWidth = state.expandedWidth
         let canvasHeight = state.expandedHeight + state.invisibleHitboxHeight + 50
         guard let screen = NSScreen.main else { return }
-        
+
         let x = screen.frame.midX - (canvasWidth / 2)
         let y = screen.frame.maxY - canvasHeight
         let canvasRect = NSRect(x: x, y: y, width: canvasWidth, height: canvasHeight)

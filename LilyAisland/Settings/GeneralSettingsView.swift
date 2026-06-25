@@ -4,17 +4,13 @@ import ServiceManagement
 struct GeneralSettingsView: View {
     @AppStorage("launch_at_login") private var launchAtLogin = false
     @AppStorage("enable_haptics") private var enableHaptics = true
-    
-    // 🌟 新增：全屏模式下是否允许鼠标悬浮触发
     @AppStorage("hover_in_fullscreen") private var hoverInFullscreen = false
-    
-    @AppStorage("island_x_offset") private var islandXOffset: Double = 0.0
-    @AppStorage("default_y_offset") private var defaultYOffset: Double = 0.0
-    @AppStorage("capsule_y_offset") private var capsuleYOffset: Double = 0.0
-    
-    // 🌟 新增：刘海倒角半径设置 (默认 7.0 更贴近物理真实感)
+
     @AppStorage("notch_radius") private var notchRadius: Double = 7.0
-    
+    @AppStorage("app_language") private var appLanguage = "zh"
+
+    private var loc: LocalizationManager { LocalizationManager.shared }
+
     var body: some View {
         Form {
             HStack {
@@ -23,33 +19,41 @@ struct GeneralSettingsView: View {
                     .padding(6)
                     .background(Color.gray)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
-                Text("General")
+                Text(loc.loc(.settings_general))
                     .font(.title2)
                     .bold()
                 Spacer()
             }
             .padding(.bottom, 10)
-            
+
             Section {
-                Toggle("Launch at login", isOn: $launchAtLogin)
+                Toggle(loc.loc(.general_launch_at_login), isOn: $launchAtLogin)
                     .toggleStyle(.switch)
                     .onChange(of: launchAtLogin) { newValue in
                         toggleLaunchAtLogin(enabled: newValue)
                     }
-                
-                Toggle("Haptic Feedback", isOn: $enableHaptics)
+
+                Toggle(loc.loc(.general_haptic_feedback), isOn: $enableHaptics)
                     .toggleStyle(.switch)
-                
-                // 🌟 新增的 UI 开关
-                Toggle("Hover in Full Screen", isOn: $hoverInFullscreen)
+
+                Toggle(loc.loc(.general_hover_in_fullscreen), isOn: $hoverInFullscreen)
                     .toggleStyle(.switch)
-                
-                // 🌟 新增的刘海倒角半径调节器
+            }
+
+            Section(loc.loc(.general_language)) {
+                Picker(loc.loc(.general_language), selection: $appLanguage) {
+                    Text("中文").tag("zh")
+                    Text("English").tag("en")
+                }
+                .pickerStyle(.segmented)
+            }
+
+            Section(loc.loc(.general_appearance)) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("Notch Curve Radius")
+                        Text(loc.loc(.general_notch_curve_radius))
                         Spacer()
-                        Text(String(format: "%.1f pt", notchRadius))
+                        Text(String(format: "%.1f", notchRadius) + loc.loc(.label_pt))
                             .foregroundColor(.gray)
                             .font(.system(.body, design: .monospaced))
                             .padding(.horizontal, 8)
@@ -61,57 +65,6 @@ struct GeneralSettingsView: View {
                         .tint(.gray)
                 }
                 .padding(.vertical, 4)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Island X-Offset")
-                        Spacer()
-                        Text(String(format: "%.0f pt", islandXOffset))
-                            .foregroundColor(.gray)
-                            .font(.system(.body, design: .monospaced))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.gray.opacity(0.2))
-                            .clipShape(Capsule())
-                    }
-                    Slider(value: $islandXOffset, in: -50.0...50.0, step: 1.0)
-                        .tint(.gray)
-                }
-                .padding(.vertical, 4)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Default Y-Offset")
-                        Spacer()
-                        Text(String(format: "%.0f pt", defaultYOffset))
-                            .foregroundColor(.gray)
-                            .font(.system(.body, design: .monospaced))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.gray.opacity(0.2))
-                            .clipShape(Capsule())
-                    }
-                    Slider(value: $defaultYOffset, in: -30.0...30.0, step: 1.0)
-                        .tint(.gray)
-                }
-                .padding(.vertical, 4)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Capsule Y-Offset")
-                        Spacer()
-                        Text(String(format: "%.0f pt", capsuleYOffset))
-                            .foregroundColor(.gray)
-                            .font(.system(.body, design: .monospaced))
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.gray.opacity(0.2))
-                            .clipShape(Capsule())
-                    }
-                    Slider(value: $capsuleYOffset, in: -30.0...30.0, step: 1.0)
-                        .tint(.gray)
-                }
-                .padding(.vertical, 4)
             }
         }
         .padding(30)
@@ -120,7 +73,7 @@ struct GeneralSettingsView: View {
             launchAtLogin = SMAppService.mainApp.status == .enabled
         }
     }
-    
+
     private func toggleLaunchAtLogin(enabled: Bool) {
         do {
             if enabled {

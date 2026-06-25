@@ -104,26 +104,18 @@ struct ContentView: View {
     @ObservedObject var state: IslandState
     
     @AppStorage("enable_haptics") private var enableHaptics = true
-    @AppStorage("island_x_offset") private var islandXOffset: Double = 0.0
     @AppStorage("focus_hide_label") private var hideLabel = false
-    @AppStorage("default_y_offset") private var defaultYOffset: Double = 0.0
-    @AppStorage("capsule_y_offset") private var capsuleYOffset: Double = 0.0
     
     @AppStorage("battery_show_percentage") private var showBatteryPercentage = true
+    @AppStorage("connectivity_show_device_name") private var showDeviceName = true
     @AppStorage("notch_radius") private var notchRadius: Double = 7.0
+
+    private var loc: LocalizationManager { LocalizationManager.shared }
     
     @State private var playButtonScale: CGFloat = 1.0
     @State private var prevButtonScale: CGFloat = 1.0
     @State private var nextButtonScale: CGFloat = 1.0
     @State private var coverScale: CGFloat = 1.0
-    
-    var currentYOffset: CGFloat {
-        if state.mode == .collapsed && !state.isMediaActive {
-            return CGFloat(defaultYOffset)
-        } else {
-            return CGFloat(capsuleYOffset)
-        }
-    }
     
     var currentCornerRadius: CGFloat {
         if state.mode == .expanded { return 32 }
@@ -182,7 +174,7 @@ struct ContentView: View {
                     
                 } else if state.mode == .battery {
                     HStack(spacing: 0) {
-                        Text(state.battery.isCharging ? "Charging" : "Battery")
+                        Text(state.battery.isCharging ? loc.loc(.island_charging) : loc.loc(.island_battery_label))
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.white)
                         
@@ -200,7 +192,24 @@ struct ContentView: View {
                     }
                     .padding(.horizontal, 20)
                     .frame(height: state.currentHeight)
-                    
+
+                } else if state.mode == .connectivity {
+                    // 紧凑图标式设计，与音量/亮度风格统一，不会被刘海遮挡
+                    HStack(spacing: 0) {
+                        Image(systemName: state.connectivity.isConnected
+                              ? "headphones"
+                              : "headphones")
+                            .foregroundColor(state.connectivity.isConnected ? .green : .gray)
+                            .font(.system(size: 16))
+                            .frame(width: 24, height: 24)
+                        Spacer()
+                        Circle()
+                            .fill(state.connectivity.isConnected ? Color.green : Color.gray.opacity(0.4))
+                            .frame(width: 8, height: 8)
+                    }
+                    .padding(.horizontal, 18)
+                    .frame(height: state.currentHeight)
+
                 } else if state.mode == .expanded {
                     if state.isMediaActive {
                         VStack(spacing: 16) {
@@ -239,7 +248,14 @@ struct ContentView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 MacNativeBatteryIcon(level: state.battery.batteryLevel, isCharging: state.battery.isCharging)
-                                Text(state.battery.isUsingAC ? "正在使用电源适配器" : "正在使用电池供电")
+                                // 蓝牙耳机连接指示灯：耳机图标，绿=已连，灰=未连
+                                Image(systemName: "headphones")
+                                    .foregroundColor(state.connectivity.isConnected ? .green : .gray)
+                                    .font(.system(size: 14))
+                                    .frame(width: 20, height: 20)
+                                Text(state.battery.isUsingAC
+                                     ? loc.loc(.island_ac_power)
+                                     : loc.loc(.island_battery_power))
                                     .font(.system(size: 14, weight: .bold))
                                     .foregroundColor(.white)
                                 Spacer()
@@ -247,25 +263,86 @@ struct ContentView: View {
                                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                                     .foregroundColor(state.battery.isCharging ? .green : .white)
                             }
-                            
-                            HStack(spacing: 24) {
+
+                            HStack(spacing: 18) {
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text("适配器供电")
+                                    Text(loc.loc(.island_adapter_wattage))
                                         .font(.system(size: 10))
                                         .foregroundColor(.gray)
                                     Text("\(state.battery.adapterWattage) W")
                                         .font(.system(size: 14, weight: .medium, design: .monospaced))
                                         .foregroundColor(state.battery.isUsingAC ? .green : .white)
                                 }
-                                
+
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(state.battery.isUsingAC ? "电池充电功率" : "电池输出功率")
+                                    Text(state.battery.isUsingAC
+                                         ? loc.loc(.island_battery_charge_wattage)
+                                         : loc.loc(.island_battery_output_wattage))
                                         .font(.system(size: 10))
                                         .foregroundColor(.gray)
                                     Text("\(String(format: "%.1f", state.battery.batteryWattage)) W")
                                         .font(.system(size: 14, weight: .medium, design: .monospaced))
                                         .foregroundColor(!state.battery.isUsingAC ? .orange : .white)
                                 }
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("CPU")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.gray)
+                                    HStack(spacing: 4) {
+                                        Text(String(format: "%.0f%%", state.monitor.cpuUsage * 100))
+                                            .font(.system(size: 14, weight: .medium, design: .monospaced))
+                                            .foregroundColor(state.monitor.cpuUsage > 0.8 ? .red : (state.monitor.cpuUsage > 0.5 ? .yellow : .white))
+                                        if state.monitor.cpuTemp > 0 {
+                                            Text(String(format: "%.0f°", state.monitor.cpuTemp))
+                                                .font(.system(size: 10, design: .monospaced))
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                }
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("GPU")
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.gray)
+                                    HStack(spacing: 4) {
+                                        Text(String(format: "%.0f%%", state.monitor.gpuUsage * 100))
+                                            .font(.system(size: 14, weight: .medium, design: .monospaced))
+                                            .foregroundColor(state.monitor.gpuUsage > 0.8 ? .red : (state.monitor.gpuUsage > 0.5 ? .yellow : .white))
+                                        if state.monitor.gpuTemp > 0 {
+                                            Text(String(format: "%.0f°", state.monitor.gpuTemp))
+                                                .font(.system(size: 10, design: .monospaced))
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                }
+
+                                // 蓝牙设备名称：名称短时显示原名，名称过长时回退为设备类型（如"耳机""音响"）
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(loc.loc(.bluetooth_label))
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.gray)
+                                    if state.connectivity.isConnected {
+                                        ViewThatFits(in: .horizontal) {
+                                            Text(state.connectivity.connectedDeviceName)
+                                                .font(.system(size: 12, weight: .medium))
+                                                .lineLimit(1)
+                                                .fixedSize(horizontal: true, vertical: false)
+                                                .foregroundColor(.green)
+                                            Text(loc.loc(state.connectivity.deviceType.localizationKey))
+                                                .font(.system(size: 12, weight: .medium))
+                                                .lineLimit(1)
+                                                .fixedSize(horizontal: true, vertical: false)
+                                                .foregroundColor(.green)
+                                        }
+                                    } else {
+                                        Text(loc.loc(.bluetooth_disconnected))
+                                            .font(.system(size: 12, weight: .medium))
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                                .layoutPriority(1)
+
                                 Spacer()
                             }
                         }
@@ -280,7 +357,7 @@ struct ContentView: View {
                             if let nsImage = state.media.artworkImage { Image(nsImage: nsImage).resizable().scaledToFill().frame(width: 24, height: 24).clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous)) }
                             else { RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.purple).frame(width: 24, height: 24).overlay(Image(systemName: "music.note").font(.system(size: 10)).foregroundColor(.white)) }
                             Spacer()
-                            if state.mode == .hovered { Text("控制正在播放").font(.system(size: 12, weight: .medium)).foregroundColor(.white) }
+                            if state.mode == .hovered { Text(loc.loc(.island_control_playing)).font(.system(size: 12, weight: .medium)).foregroundColor(.white) }
                             Spacer()
                             AudioEqualizerView(isPlaying: state.media.isPlaying, mode: state.mode).frame(width: 24, alignment: .trailing)
                         }
@@ -311,7 +388,7 @@ struct ContentView: View {
             .animation(.spring(response: 0.4, dampingFraction: 1.0), value: state.mode)
             .animation(.spring(response: 0.4, dampingFraction: 1.0), value: state.isMediaActive)
             .onTapGesture {
-                guard state.mode != .volume && state.mode != .brightness && state.mode != .dnd && state.mode != .battery else { return }
+                guard state.mode != .volume && state.mode != .brightness && state.mode != .dnd && state.mode != .battery && state.mode != .connectivity else { return }
                 
                 if state.mode == .hovered {
                     triggerHaptic(.generic)
@@ -319,13 +396,13 @@ struct ContentView: View {
                 }
             }
             
-            if state.mode != .expanded && state.mode != .volume && state.mode != .brightness && state.mode != .dnd && state.mode != .battery {
+            if state.mode != .expanded && state.mode != .volume && state.mode != .brightness && state.mode != .dnd && state.mode != .battery && state.mode != .connectivity {
                 Color.clear.frame(width: state.currentWidth, height: state.invisibleHitboxHeight)
             }
         }
         .contentShape(Rectangle())
         .onHover { hovering in
-            guard state.mode != .volume && state.mode != .brightness && state.mode != .dnd && state.mode != .battery else { return }
+            guard state.mode != .volume && state.mode != .brightness && state.mode != .dnd && state.mode != .battery && state.mode != .connectivity else { return }
             
             if hovering {
                 if state.mode == .collapsed {
@@ -341,7 +418,6 @@ struct ContentView: View {
             }
         }
         .frame(width: state.expandedWidth, height: state.expandedHeight + state.invisibleHitboxHeight, alignment: .top)
-        .offset(x: CGFloat(islandXOffset), y: currentYOffset)
     }
     
     private func triggerHaptic(_ pattern: NSHapticFeedbackManager.FeedbackPattern) {

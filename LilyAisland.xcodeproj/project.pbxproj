@@ -280,6 +280,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LilyAisland/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "LilyA Island 需要此权限来获取和控制当前播放的音乐状态";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "需要获取蓝牙权限以检测已连接的音频设备（如耳机、音箱），从而在媒体控制面板中准确同步和控制播放状态。";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -326,6 +328,8 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = LilyAisland/Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "LilyA Island 需要此权限来获取和控制当前播放的音乐状态";
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "需要获取蓝牙权限以检测已连接的音频设备（如耳机、音箱），从而在媒体控制面板中准确同步和控制播放状态。";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

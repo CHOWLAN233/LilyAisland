@@ -6,7 +6,9 @@ struct FocusSettingsView: View {
     // 🌟 1. 新增：声音提示开关
     @AppStorage("focus_play_sound") private var playSound = false
     @AppStorage("focus_hide_label") private var hideLabel = false
-    
+
+    private var loc: LocalizationManager { LocalizationManager.shared }
+
     var body: some View {
         Form {
             HStack {
@@ -15,7 +17,7 @@ struct FocusSettingsView: View {
                     .padding(6)
                     .background(Color.indigo)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
-                Text("Focus")
+                Text(loc.loc(.focus_title))
                     .font(.title2)
                     .bold()
                 Spacer()
@@ -23,14 +25,14 @@ struct FocusSettingsView: View {
             .padding(.bottom, 10)
             
             Section {
-                Toggle("Focus", isOn: $isFocusEnabled)
+                Toggle(loc.loc(.focus_enable), isOn: $isFocusEnabled)
                     .toggleStyle(.switch)
                 
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("Duration")
+                        Text(loc.loc(.focus_duration))
                         Spacer()
-                        Text(String(format: "%.1f s", focusDuration))
+                        Text(String(format: "%.1f", focusDuration) + loc.loc(.label_s))
                             .foregroundColor(.gray)
                             .font(.system(.body, design: .monospaced))
                             .padding(.horizontal, 8)
@@ -45,7 +47,7 @@ struct FocusSettingsView: View {
                 
                 // 🌟 2. 还原竞品 UI：睡眠/勿扰时播放提示音
                 HStack {
-                    Text("Play sound on sleep focus")
+                    Text(loc.loc(.focus_play_sound))
                     Image(systemName: "play.circle.fill")
                         .foregroundColor(.gray)
                         .onTapGesture {
@@ -58,7 +60,7 @@ struct FocusSettingsView: View {
                         .toggleStyle(.switch)
                 }
                 
-                Toggle("Hide label", isOn: $hideLabel)
+                Toggle(loc.loc(.focus_hide_label), isOn: $hideLabel)
                     .toggleStyle(.switch)
             }
         }
