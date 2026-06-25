@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LilyAisland — Dynamic Island for Mac</title>
+<meta name="description" content="LilyAisland brings iPhone Dynamic Island experience to your Mac. A floating interactive pill-shaped widget for system monitoring, media control, and more.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏝️</text></svg>">
+<style>
+/* ============ RESET & BASE ============ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',system-ui,sans-serif;background:#0a0a0a;color:#f5f5f7;line-height:1.6;overflow-x:hidden}
+a{color:#5e9eff;text-decoration:none;transition:color .2s}
+a:hover{color:#8bb9ff}
+img{max-width:100%;height:auto}
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+
+/* ============ NAVBAR ============ */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,10,.85);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid rgba(255,255,255,.08);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.navbar-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.15rem;color:#fff}
+.navbar-brand .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#5e9eff,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:18px}
+.navbar-links{display:flex;align-items:center;gap:8px}
+.navbar-links a,.navbar-links button{color:#a1a1aa;padding:6px 14px;border-radius:8px;font-size:.9rem;transition:all .2s;border:none;background:none;cursor:pointer;font-family:inherit}
+.navbar-links a:hover,.navbar-links button:hover{color:#fff;background:rgba(255,255,255,.06)}
+.navbar-links .btn-primary{background:linear-gradient(135deg,#5e9eff,#7c5cff);color:#fff;font-weight:600;padding:7px 18px;border-radius:8px}
+.navbar-links .btn-primary:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 16px rgba(94,158,255,.3)}
+.lang-switch{display:flex;background:rgba(255,255,255,.06);border-radius:8px;overflow:hidden;padding:2px}
+.lang-switch button{padding:5px 12px;border:none;background:none;color:#a1a1aa;cursor:pointer;font-size:.82rem;font-weight:500;transition:all .2s;border-radius:6px;font-family:inherit}
+.lang-switch button.active{background:rgba(255,255,255,.12);color:#fff}
+.nav-mobile{display:none}
+
+/* ============ HERO ============ */
+.hero{padding:120px 0 80px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-300px;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(94,158,255,.08) 0%,transparent 60%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(94,158,255,.12);color:#5e9eff;padding:6px 16px;border-radius:20px;font-size:.85rem;font-weight:500;margin-bottom:28px}
+.hero h1{font-size:3.8rem;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:20px;background:linear-gradient(135deg,#fff 0%,#a1a1aa 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p.subtitle{font-size:1.25rem;color:#a1a1aa;max-width:600px;margin:0 auto 40px;line-height:1.7}
+.hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn{padding:12px 28px;border-radius:10px;font-weight:600;font-size:.95rem;cursor:pointer;transition:all .25s;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:8px}
+.btn-primary-large{background:linear-gradient(135deg,#5e9eff,#7c5cff);color:#fff;font-size:1rem;padding:14px 32px;box-shadow:0 4px 24px rgba(94,158,255,.25)}
+.btn-primary-large:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(94,158,255,.35)}
+.btn-outline{background:rgba(255,255,255,.06);color:#e4e4e7;border:1px solid rgba(255,255,255,.12)}
+.btn-outline:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)}
+
+/* ============ ISLAND DEMO ============ */
+.demo-section{padding:20px 0 60px}
+.demo-mac-frame{max-width:900px;margin:0 auto;background:#1a1a1e;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 120px rgba(94,158,255,.04)}
+.demo-mac-topbar{height:36px;background:#1e1e22;display:flex;align-items:center;padding:0 16px;gap:8px;border-bottom:1px solid rgba(255,255,255,.06)}
+.demo-mac-dot{width:11px;height:11px;border-radius:50%}
+.demo-mac-dot.red{background:#ff5f57}
+.demo-mac-dot.yellow{background:#febc2e}
+.demo-mac-dot.green{background:#28c840}
+.demo-mac-screen{position:relative;height:420px;background:radial-gradient(ellipse at 50% 0%,rgba(94,158,255,.06) 0%,transparent 50%),linear-gradient(180deg,#12121a 0%,#0d0d14 100%);display:flex;flex-direction:column;align-items:center;overflow:hidden}
+.demo-mac-screen .wallpaper-hint{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:.78rem;color:rgba(255,255,255,.15);pointer-events:none}
+
+/* Island */
+.island-container{position:relative;margin-top:8px;z-index:10}
+.island{background:#000;border:1px solid rgba(255,255,255,.1);border-radius:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .45s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.6)}
+.island.collapsed{width:180px;height:34px}
+.island.hovered{width:270px;height:40px;border-radius:28px}
+.island.expanded{width:520px;height:200px;border-radius:32px;cursor:default}
+.island.vol-mode{width:360px;height:36px;border-radius:22px}
+.island.brightness-mode{width:360px;height:36px;border-radius:22px}
+.island.dnd-mode{width:280px;height:36px;border-radius:22px}
+.island.battery-mode{width:300px;height:36px;border-radius:22px}
+.island.connectivity-mode{width:300px;height:36px;border-radius:22px}
+
+/* Notch flare */
+.notch-flare{position:absolute;top:-2px;width:100%;height:8px;pointer-events:none;z-index:5;display:flex;justify-content:space-between}
+.notch-flare::before,.notch-flare::after{content:'';width:16px;height:8px;background:#0d0d14;border-radius:0 0 8px 0}
+.notch-flare::after{border-radius:0 0 0 8px}
+
+/* Collapsed: dots */
+.island-dots{display:flex;gap:8px;align-items:center}
+.island-dot{width:8px;height:8px;border-radius:50%;transition:background .5s}
+.island-dot.cpu-dot{background:#5e9eff}
+.island-dot.cpu-dot.high{background:#f59e0b}
+.island-dot.cpu-dot.critical{background:#ef4444}
+.island-dot.mem-dot{background:#22c55e}
+.island-dot.mem-dot.high{background:#f59e0b}
+.island-dot.mem-dot.critical{background:#ef4444}
+
+/* Hovered: labels */
+.island-labels{display:flex;align-items:center;gap:6px}
+.island-label{font-size:.7rem;color:rgba(255,255,255,.7);font-weight:500}
+
+/* Expanded content */
+.island-expanded-content{display:none;flex-direction:column;align-items:center;gap:14px;width:100%;height:100%;padding:20px 24px}
+.island.expanded .island-expanded-content{display:flex}
+.island.expanded .island-dots,.island.expanded .island-labels,.island.expanded .island-simple-content{display:none}
+.island-simple-content{display:flex;align-items:center;gap:10px}
+
+/* Expanded: system dashboard */
+.expanded-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;width:100%}
+.expanded-card{background:rgba(255,255,255,.04);border-radius:12px;padding:12px 14px;text-align:center;border:1px solid rgba(255,255,255,.05)}
+.expanded-card .card-icon{font-size:1.2rem;margin-bottom:4px}
+.expanded-card .card-value{font-size:1.1rem;font-weight:700;color:#fff}
+.expanded-card .card-label{font-size:.68rem;color:rgba(255,255,255,.4);margin-top:2px}
+.expanded-card .card-temp{font-size:.72rem;color:rgba(255,255,255,.5);margin-top:1px}
+
+/* Media player in expanded */
+.player-artwork{width:72px;height:72px;border-radius:14px;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:2rem;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.player-info{text-align:center}
+.player-song{font-size:1rem;font-weight:700;color:#fff}
+.player-artist{font-size:.8rem;color:rgba(255,255,255,.5);margin-top:2px}
+.player-progress{width:100%;height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:10px;position:relative;overflow:hidden}
+.player-progress-bar{height:100%;background:#5e9eff;border-radius:2px;transition:width 3s linear}
+.player-controls{display:flex;gap:20px;align-items:center;margin-top:8px}
+.player-btn{background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:1.1rem;padding:6px;border-radius:50%;transition:all .15s}
+.player-btn:hover{color:#fff;background:rgba(255,255,255,.08)}
+.player-btn.play-btn{font-size:1.4rem;color:#fff}
+
+/* Mode-specific HUD styles */
+.hud-icon{font-size:1rem;margin-right:10px}
+.hud-bar-container{flex:1;height:4px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden;max-width:220px}
+.hud-bar{height:100%;background:#5e9eff;border-radius:2px;transition:width .2s}
+.hud-value{font-size:.8rem;color:rgba(255,255,255,.7);margin-left:10px;min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
+.dnd-status{font-size:.8rem;color:rgba(255,255,255,.7);margin-left:8px}
+.battery-icon{color:#22c55e;font-size:1rem;margin-right:8px}
+
+/* Demo controls */
+.demo-controls{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding:20px;max-width:900px;margin:0 auto}
+.demo-ctrl-btn{padding:8px 18px;border-radius:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#a1a1aa;cursor:pointer;font-size:.82rem;font-weight:500;transition:all .2s;font-family:inherit}
+.demo-ctrl-btn:hover{border-color:rgba(255,255,255,.2);color:#fff;background:rgba(255,255,255,.06)}
+.demo-ctrl-btn.active{background:rgba(94,158,255,.15);border-color:rgba(94,158,255,.3);color:#5e9eff}
+.demo-hint{text-align:center;font-size:.8rem;color:rgba(255,255,255,.3);margin-top:4px}
+
+/* ============ FEATURES ============ */
+.section{padding:80px 0}
+.section-header{text-align:center;margin-bottom:60px}
+.section-header h2{font-size:2.5rem;font-weight:700;letter-spacing:-.02em;color:#fff;margin-bottom:12px}
+.section-header p{font-size:1.1rem;color:#a1a1aa;max-width:560px;margin:0 auto}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px}
+.feature-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:28px;transition:all .3s;cursor:pointer;position:relative;overflow:hidden}
+.feature-card:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.feature-card .f-icon{font-size:2rem;margin-bottom:16px;display:block}
+.feature-card h3{font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:8px}
+.feature-card p{font-size:.88rem;color:rgba(255,255,255,.55);line-height:1.65;margin-bottom:16px}
+.feature-interactive{margin-top:12px;padding:14px;background:rgba(0,0,0,.25);border-radius:10px;border:1px solid rgba(255,255,255,.04);min-height:48px;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .3s}
+.feature-interactive .feedback-text{font-size:.78rem;color:rgba(255,255,255,.5)}
+.feature-interactive.clicked{background:rgba(94,158,255,.08);border-color:rgba(94,158,255,.15)}
+.feature-interactive.clicked .feedback-text{color:#5e9eff}
+
+/* Mini sliders in feature cards */
+.mini-slider{width:120px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;cursor:pointer;position:relative}
+.mini-slider-fill{height:100%;background:linear-gradient(90deg,#5e9eff,#a78bfa);border-radius:2px;transition:width .15s}
+.mini-toggle{width:44px;height:24px;border-radius:12px;background:rgba(255,255,255,.15);cursor:pointer;position:relative;transition:background .3s}
+.mini-toggle.on{background:#22c55e}
+.mini-toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .3s}
+.mini-toggle.on::after{transform:translateX(20px)}
+.mini-btn{padding:6px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#ccc;cursor:pointer;font-size:.78rem;transition:all .15s;font-family:inherit}
+.mini-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+.mini-btn:active{transform:scale(.95)}
+
+/* ============ SETTINGS PREVIEW ============ */
+.settings-demo{max-width:700px;margin:0 auto;background:#1a1a1e;border-radius:16px;border:1px solid rgba(255,255,255,.08);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.settings-demo-header{background:#1e1e22;padding:14px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.06)}
+.settings-demo-body{display:flex;min-height:320px}
+.settings-sidebar{width:160px;background:rgba(0,0,0,.2);border-right:1px solid rgba(255,255,255,.05);padding:8px}
+.settings-sidebar-item{padding:10px 14px;border-radius:8px;cursor:pointer;font-size:.82rem;color:rgba(255,255,255,.55);transition:all .15s;display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.settings-sidebar-item:hover{color:rgba(255,255,255,.8);background:rgba(255,255,255,.04)}
+.settings-sidebar-item.active{color:#fff;background:rgba(94,158,255,.12)}
+.settings-content{padding:20px 24px;flex:1}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.settings-row:last-child{border-bottom:none}
+.settings-row-label{font-size:.85rem;color:rgba(255,255,255,.8)}
+.settings-row-desc{font-size:.72rem;color:rgba(255,255,255,.35);margin-top:2px}
+.setting-slider{-webkit-appearance:none;width:120px;height:4px;border-radius:2px;background:rgba(255,255,255,.15);outline:none}
+.setting-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#5e9eff;cursor:pointer}
+
+/* ============ INSTALL ============ */
+.install-section{background:rgba(255,255,255,.02);border-top:1px solid rgba(255,255,255,.05);border-bottom:1px solid rgba(255,255,255,.05);padding:80px 0}
+.install-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:32px}
+.install-card h3{font-size:1.2rem;color:#fff;margin-bottom:16px}
+.install-card pre{background:rgba(0,0,0,.4);border-radius:10px;padding:16px 20px;overflow-x:auto;font-size:.82rem;color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.05);line-height:1.7;font-family:'SF Mono',Monaco,'Cascadia Code',monospace}
+.install-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:32px}
+.install-steps{list-style:none;counter-reset:steps}
+.install-steps li{counter-increment:steps;padding:10px 0 10px 36px;position:relative;font-size:.9rem;color:rgba(255,255,255,.7)}
+.install-steps li::before{content:counter(steps);position:absolute;left:0;top:10px;width:22px;height:22px;border-radius:50%;background:rgba(94,158,255,.15);color:#5e9eff;font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+/* ============ FOOTER ============ */
+.footer{padding:40px 0;text-align:center;border-top:1px solid rgba(255,255,255,.05)}
+.footer-links{display:flex;gap:24px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+.footer-links a{font-size:.85rem;color:rgba(255,255,255,.45)}
+.footer-links a:hover{color:rgba(255,255,255,.7)}
+.footer-copy{font-size:.78rem;color:rgba(255,255,255,.3)}
+
+/* ============ TOAST ============ */
+.toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(100px);background:rgba(255,255,255,.12);backdrop-filter:blur(20px);color:#fff;padding:10px 24px;border-radius:20px;font-size:.85rem;font-weight:500;z-index:9999;transition:transform .4s cubic-bezier(.16,1,.3,1);pointer-events:none;border:1px solid rgba(255,255,255,.12)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.success{background:rgba(34,197,94,.2);border-color:rgba(34,197,94,.3)}
+
+/* ============ ANIMATIONS ============ */
+@keyframes equalizer-bounce{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+.eq-bar{display:inline-block;width:3px;height:14px;background:#5e9eff;border-radius:2px;margin:0 1px;animation:equalizer-bounce .8s ease-in-out infinite}
+.eq-bar:nth-child(1){animation-delay:0s}
+.eq-bar:nth-child(2){animation-delay:.15s}
+.eq-bar:nth-child(3){animation-delay:.3s}
+.eq-bar:nth-child(4){animation-delay:.45s}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.animate-in{animation:fadeInUp .6s ease-out forwards}
+.scroll-reveal{opacity:0;transform:translateY(30px);transition:all .7s ease-out}
+.scroll-reveal.visible{opacity:1;transform:translateY(0)}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:768px){
+  .hero h1{font-size:2.2rem}.hero p.subtitle{font-size:1rem}.navbar-links{display:none}
+  .nav-mobile{display:flex;align-items:center}.island.collapsed{width:150px;height:30px}
+  .island.expanded{width:calc(100vw - 48px);height:auto;min-height:180px;padding:16px}
+  .island.vol-mode,.island.brightness-mode{width:260px}.island.dnd-mode,.island.battery-mode,.island.connectivity-mode{width:220px}
+  .expanded-grid{grid-template-columns:1fr 1fr}.features-grid{grid-template-columns:1fr}
+  .install-grid{grid-template-columns:1fr}.settings-demo-body{flex-direction:column}.settings-sidebar{width:100%;display:flex;overflow-x:auto;border-right:none;border-bottom:1px solid rgba(255,255,255,.05);flex-direction:row}.settings-sidebar-item{white-space:nowrap}.demo-mac-screen{height:320px}
+}
+@media(max-width:480px){.hero h1{font-size:1.8rem}.expanded-grid{grid-template-columns:1fr}.hero-actions{flex-direction:column;align-items:center}}
+</style>
+</head>
+<body>
+
+<!-- ============ NAVBAR ============ -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <div class="logo">🏝️</div>
+    <span>LilyAisland</span>
+  </div>
+  <div class="navbar-links" id="navLinks">
+    <a href="#demo" data-i18n="nav.demo">演示 Demo</a>
+    <a href="#features" data-i18n="nav.features">功能 Features</a>
+    <a href="#settings-demo-section" data-i18n="nav.settings">设置 Settings</a>
+    <a href="#install" data-i18n="nav.install">安装 Install</a>
+    <a href="https://github.com/CHOWLAN233/LilyAisland" target="_blank" rel="noopener">GitHub ↗</a>
+    <div class="lang-switch">
+      <button onclick="switchLang('zh')" id="btnZh" class="active">中文</button>
+      <button onclick="switchLang('en')" id="btnEn">EN</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-badge" data-i18n="hero.badge">✨ macOS Dynamic Island</div>
+  <h1 data-i18n="hero.title">LilyAisland</h1>
+  <p class="subtitle" data-i18n="hero.subtitle">将 iPhone 灵动岛体验带到 Mac。一个悬浮在屏幕顶部的交互式胶囊形控件，集系统监控、媒体控制、快捷操作为一体。</p>
+  <div class="hero-actions">
+    <a href="#demo" class="btn btn-primary-large" data-i18n="hero.tryDemo">🎮 体验演示</a>
+    <a href="https://github.com/CHOWLAN233/LilyAisland/releases" target="_blank" rel="noopener" class="btn btn-outline" data-i18n="hero.download">⬇️ 下载应用</a>
+    <a href="https://github.com/CHOWLAN233/LilyAisland" target="_blank" rel="noopener" class="btn btn-outline" data-i18n="hero.viewSource">📁 查看源码</a>
+  </div>
+</header>
+
+<!-- ============ INTERACTIVE DEMO ============ -->
+<section class="demo-section" id="demo">
+  <div class="section-header">
+    <h2 data-i18n="demo.title">🎮 交互式演示</h2>
+    <p data-i18n="demo.desc">悬停或点击下方的灵动岛，体验真实的各种交互模式</p>
+  </div>
+
+  <!-- Mac Frame -->
+  <div class="demo-mac-frame">
+    <div class="demo-mac-topbar">
+      <div class="demo-mac-dot red"></div>
+      <div class="demo-mac-dot yellow"></div>
+      <div class="demo-mac-dot green"></div>
+    </div>
+    <div class="demo-mac-screen">
+      <div class="island-container">
+        <div class="notch-flare"></div>
+        <div class="island collapsed" id="island" onclick="handleIslandClick()" onmouseenter="handleIslandHover(true)" onmouseleave="handleIslandHover(false)">
+          <!-- Collapsed: colored dots -->
+          <div class="island-simple-content" id="islandSimple">
+            <div class="island-dots">
+              <div class="island-dot cpu-dot" id="cpuDot"></div>
+              <div class="island-dot mem-dot" id="memDot"></div>
+            </div>
+          </div>
+          <!-- Expanded: dashboard -->
+          <div class="island-expanded-content" id="islandExpanded">
+            <div class="expanded-grid">
+              <div class="expanded-card">
+                <div class="card-icon">🔋</div>
+                <div class="card-value" id="expBattery">85%</div>
+                <div class="card-label" data-i18n="demo.battery">电池</div>
+                <div class="card-temp" data-i18n="demo.charging">交流电</div>
+              </div>
+              <div class="expanded-card">
+                <div class="card-icon">⚡</div>
+                <div class="card-value" id="expWattage">18.5W</div>
+                <div class="card-label" data-i18n="demo.adapter">适配器功率</div>
+              </div>
+              <div class="expanded-card">
+                <div class="card-icon">🎧</div>
+                <div class="card-value" id="expBT" style="font-size:.85rem">AirPods Pro</div>
+                <div class="card-label" data-i18n="demo.bluetooth">蓝牙设备</div>
+              </div>
+              <div class="expanded-card">
+                <div class="card-icon">🖥️</div>
+                <div class="card-value" id="expCPU">32%</div>
+                <div class="card-label">CPU</div>
+                <div class="card-temp" id="expCPUTemp" style="color:#f59e0b">62°C</div>
+              </div>
+              <div class="expanded-card">
+                <div class="card-icon">🎮</div>
+                <div class="card-value" id="expGPU">18%</div>
+                <div class="card-label">GPU</div>
+                <div class="card-temp" id="expGPUTemp" style="color:#22c55e">48°C</div>
+              </div>
+              <div class="expanded-card">
+                <div class="card-icon">💾</div>
+                <div class="card-value" id="expMem">45%</div>
+                <div class="card-label" data-i18n="demo.memory">内存</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="wallpaper-hint" data-i18n="demo.wallpaper">macOS 桌面</div>
+    </div>
+  </div>
+
+  <!-- Demo Control Buttons -->
+  <div class="demo-controls">
+    <button class="demo-ctrl-btn" onclick="showMode('collapsed')" data-i18n="demo.collapsed">🔵 折叠状态</button>
+    <button class="demo-ctrl-btn" onclick="showMode('expanded')" data-i18n="demo.expanded">📊 展开仪表盘</button>
+    <button class="demo-ctrl-btn" onclick="showMode('volume')" data-i18n="demo.volume">🔊 音量 HUD</button>
+    <button class="demo-ctrl-btn" onclick="showMode('brightness')" data-i18n="demo.brightness">☀️ 亮度 HUD</button>
+    <button class="demo-ctrl-btn" onclick="showMode('dnd')" data-i18n="demo.dnd">🌙 勿扰模式</button>
+    <button class="demo-ctrl-btn" onclick="showMode('battery')" data-i18n="demo.batteryMode">🔋 电池提醒</button>
+    <button class="demo-ctrl-btn" onclick="showMode('connectivity')" data-i18n="demo.connectivity">🎧 蓝牙连接</button>
+    <button class="demo-ctrl-btn" onclick="showMode('media')" data-i18n="demo.media">🎵 音乐播放</button>
+  </div>
+  <p class="demo-hint" data-i18n="demo.hint">💡 也可以直接在灵动岛上悬停和点击</p>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="section-header">
+      <h2 data-i18n="features.title">✨ 全部功能</h2>
+      <p data-i18n="features.desc">8 大模块，覆盖系统监控、媒体控制和快捷操作，点击每个卡片即可体验交互</p>
+    </div>
+    <div class="features-grid">
+
+      <!-- Feature 1: Now Playing -->
+      <div class="feature-card" onclick="featureClick(this, 'media')">
+        <span class="f-icon">🎵</span>
+        <h3 data-i18n="feat.media.title">正在播放</h3>
+        <p data-i18n="feat.media.desc">Apple Music 曲目信息、专辑封面、播放进度。支持播放/暂停、上一首、下一首。</p>
+        <div class="feature-interactive" id="featMedia">
+          <div class="player-artwork" style="width:40px;height:40px;border-radius:8px;font-size:1.2rem">🎶</div>
+          <div style="text-align:left;flex:1">
+            <div style="font-size:.8rem;color:#fff;font-weight:600">Blinding Lights</div>
+            <div style="font-size:.7rem;color:rgba(255,255,255,.45)">The Weeknd</div>
+          </div>
+          <button class="mini-btn" onclick="event.stopPropagation();mediaControl('prev')">⏮</button>
+          <button class="mini-btn" onclick="event.stopPropagation();mediaControl('play')" id="playBtn">▶️</button>
+          <button class="mini-btn" onclick="event.stopPropagation();mediaControl('next')">⏭</button>
+        </div>
+      </div>
+
+      <!-- Feature 2: Volume -->
+      <div class="feature-card" onclick="featureClick(this, 'volume')">
+        <span class="f-icon">🔊</span>
+        <h3 data-i18n="feat.volume.title">音量控制</h3>
+        <p data-i18n="feat.volume.desc">拦截系统音量键，用自定义 HUD 替代系统弹窗。即时响应，零延迟跟手。</p>
+        <div class="feature-interactive" id="featVolume">
+          <span>🔈</span>
+          <div class="mini-slider" onclick="event.stopPropagation()">
+            <div class="mini-slider-fill" id="volSlider" style="width:65%"></div>
+          </div>
+          <span style="font-size:.78rem;color:rgba(255,255,255,.7);min-width:32px">65%</span>
+          <input type="range" min="0" max="100" value="65" style="width:60px" oninput="updateVolSlider(this.value)" onclick="event.stopPropagation()">
+        </div>
+      </div>
+
+      <!-- Feature 3: Brightness -->
+      <div class="feature-card" onclick="featureClick(this, 'brightness')">
+        <span class="f-icon">☀️</span>
+        <h3 data-i18n="feat.brightness.title">亮度调节</h3>
+        <p data-i18n="feat.brightness.desc">平滑橡皮筋式亮度过渡动画，60fps 动画器驱动，追赶目标值。</p>
+        <div class="feature-interactive" id="featBrightness">
+          <span>🌙</span>
+          <div class="mini-slider" onclick="event.stopPropagation()">
+            <div class="mini-slider-fill" id="briSlider" style="width:80%"></div>
+          </div>
+          <span>☀️</span>
+          <input type="range" min="0" max="100" value="80" style="width:60px" oninput="updateBriSlider(this.value)" onclick="event.stopPropagation()">
+        </div>
+      </div>
+
+      <!-- Feature 4: Battery -->
+      <div class="feature-card" onclick="featureClick(this, 'battery')">
+        <span class="f-icon">🔋</span>
+        <h3 data-i18n="feat.battery.title">电池监控</h3>
+        <p data-i18n="feat.battery.desc">实时电量、充/放电功率（电压×电流）、适配器功率。插拔和低电量提醒。</p>
+        <div class="feature-interactive" id="featBattery">
+          <span style="font-size:1.2rem">🔋</span>
+          <span style="font-weight:700;color:#22c55e" id="battPct">85%</span>
+          <span style="font-size:.75rem;color:rgba(255,255,255,.5)">⚡ 18.5W</span>
+          <button class="mini-btn" onclick="event.stopPropagation();toggleCharger()" id="chargerBtn" data-i18n="feat.battery.unplug">拔掉电源</button>
+        </div>
+      </div>
+
+      <!-- Feature 5: DND -->
+      <div class="feature-card" onclick="featureClick(this, 'dnd')">
+        <span class="f-icon">🌙</span>
+        <h3 data-i18n="feat.dnd.title">专注模式</h3>
+        <p data-i18n="feat.dnd.desc">一键切换勿扰模式，自定义指示器。可选系统音效反馈（播放 "Glass" 音效）。</p>
+        <div class="feature-interactive" id="featDND">
+          <span style="font-size:1rem">🌙</span>
+          <div class="mini-toggle" id="dndToggle" onclick="event.stopPropagation();toggleDND()"></div>
+          <span class="feedback-text" id="dndStatus" data-i18n="dnd.off">专注：关</span>
+        </div>
+      </div>
+
+      <!-- Feature 6: Connectivity -->
+      <div class="feature-card" onclick="featureClick(this, 'connectivity')">
+        <span class="f-icon">🎧</span>
+        <h3 data-i18n="feat.connectivity.title">连接设备</h3>
+        <p data-i18n="feat.connectivity.desc">蓝牙设备连接/断开通知，智能识别设备类型（AirPods、耳机、音箱）。</p>
+        <div class="feature-interactive" id="featConnectivity">
+          <span style="font-size:1rem">🎧</span>
+          <span class="feedback-text" id="btDevice" data-i18n="connectivity.connected">已连接：AirPods Pro</span>
+          <button class="mini-btn" onclick="event.stopPropagation();toggleBT()" data-i18n="connectivity.disconnect">断开</button>
+        </div>
+      </div>
+
+      <!-- Feature 7: System Stats -->
+      <div class="feature-card" onclick="featureClick(this, 'expanded')">
+        <span class="f-icon">📊</span>
+        <h3 data-i18n="feat.system.title">系统状态</h3>
+        <p data-i18n="feat.system.desc">CPU、GPU、内存使用率及温度读数。通过 AppleSMC 获取硬件级数据。</p>
+        <div class="feature-interactive" id="featSystem">
+          <div style="display:flex;gap:16px;font-size:.75rem">
+            <div style="text-align:center"><div style="color:#5e9eff;font-weight:700" id="sysCPU">32%</div><div style="color:rgba(255,255,255,.35)">CPU</div></div>
+            <div style="text-align:center"><div style="color:#22c55e;font-weight:700" id="sysGPU">18%</div><div style="color:rgba(255,255,255,.35)">GPU</div></div>
+            <div style="text-align:center"><div style="color:#f59e0b;font-weight:700" id="sysMem">45%</div><div style="color:rgba(255,255,255,.35)" data-i18n="system.mem">内存</div></div>
+            <div style="text-align:center"><div style="color:#ef4444;font-weight:700" id="sysTemp">62°C</div><div style="color:rgba(255,255,255,.35)">CPU °C</div></div>
+          </div>
+          <button class="mini-btn" onclick="event.stopPropagation();refreshStats()">🔄</button>
+        </div>
+      </div>
+
+      <!-- Feature 8: Localization -->
+      <div class="feature-card" onclick="event.stopPropagation()">
+        <span class="f-icon">🌐</span>
+        <h3 data-i18n="feat.i18n.title">多语言支持</h3>
+        <p data-i18n="feat.i18n.desc">完整的中文和 English 本地化，覆盖 ~110 个字符串键。设置中即时切换，无需重启。</p>
+        <div class="feature-interactive">
+          <button class="mini-btn active" onclick="switchLang('zh');this.classList.add('active');this.nextElementSibling.classList.remove('active')" id="langBtZh">🇨🇳 中文</button>
+          <button class="mini-btn" onclick="switchLang('en');this.classList.add('active');this.previousElementSibling.classList.remove('active')" id="langBtEn">🇺🇸 English</button>
+          <span class="feedback-text" id="langFeedback"></span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ SETTINGS PREVIEW ============ -->
+<section class="section" id="settings-demo-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 data-i18n="settings.title">⚙️ 设置面板</h2>
+      <p data-i18n="settings.desc">7 大设置分类，精细控制每一个模块的行为</p>
+    </div>
+    <div class="settings-demo">
+      <div class="settings-demo-header">
+        <div class="demo-mac-dot red" style="width:10px;height:10px"></div>
+        <div class="demo-mac-dot yellow" style="width:10px;height:10px"></div>
+        <div class="demo-mac-dot green" style="width:10px;height:10px"></div>
+        <span style="font-size:.8rem;color:rgba(255,255,255,.4);margin-left:8px" data-i18n="settings.window">设置 — LilyAisland</span>
+      </div>
+      <div class="settings-demo-body">
+        <div class="settings-sidebar">
+          <div class="settings-sidebar-item active" onclick="switchSettingTab(this, 'general')" data-i18n="settings.general">⚙️ 通用</div>
+          <div class="settings-sidebar-item" onclick="switchSettingTab(this, 'battery')" data-i18n="settings.battery">🔋 电池</div>
+          <div class="settings-sidebar-item" onclick="switchSettingTab(this, 'connectivity')" data-i18n="settings.connectivity">🎧 连接设备</div>
+          <div class="settings-sidebar-item" onclick="switchSettingTab(this, 'focus')" data-i18n="settings.focus">🌙 专注</div>
+          <div class="settings-sidebar-item" onclick="switchSettingTab(this, 'display')" data-i18n="settings.display">☀️ 显示</div>
+          <div class="settings-sidebar-item" onclick="switchSettingTab(this, 'sound')" data-i18n="settings.sound">🔊 声音</div>
+          <div class="settings-sidebar-item" onclick="switchSettingTab(this, 'nowplaying')" data-i18n="settings.nowplaying">🎵 正在播放</div>
+        </div>
+        <div class="settings-content" id="settingsContent"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INSTALL ============ -->
+<section class="install-section" id="install">
+  <div class="container">
+    <div class="section-header">
+      <h2 data-i18n="install.title">📥 安装方式</h2>
+      <p data-i18n="install.desc">两种方式任选 — 直接下载或从源码构建</p>
+    </div>
+    <div class="install-grid">
+      <div class="install-card">
+        <h3 data-i18n="install.download">⬇️ 下载安装（推荐）</h3>
+        <ol class="install-steps">
+          <li data-i18n="install.step1">前往 <a href="https://github.com/CHOWLAN233/LilyAisland/releases" target="_blank">Releases 页面</a> 下载 .zip</li>
+          <li data-i18n="install.step2">解压并拖入「应用程序」文件夹</li>
+          <li data-i18n="install.step3">启动应用，根据提示授予「辅助功能」权限</li>
+          <li data-i18n="install.step4">灵动岛将出现在屏幕顶部中央 ✨</li>
+        </ol>
+      </div>
+      <div class="install-card">
+        <h3 data-i18n="install.build">🛠️ 从源码构建</h3>
+        <pre>git clone https://github.com/CHOWLAN233/LilyAisland.git
+cd LilyAisland
+open LilyAisland.xcodeproj</pre>
+        <p style="font-size:.82rem;color:rgba(255,255,255,.45);margin-top:12px" data-i18n="install.buildNote">需要 Xcode 16+，macOS 15.2+。Product > Archive 或使用 xcodebuild 命令行构建。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="footer-links">
+    <a href="https://github.com/CHOWLAN233/LilyAisland" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://github.com/CHOWLAN233/LilyAisland/releases" target="_blank" rel="noopener">Releases</a>
+    <a href="https://github.com/CHOWLAN233/LilyAisland/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    <a href="https://github.com/CHOWLAN233" target="_blank" rel="noopener">@CHOWLAN233</a>
+  </div>
+  <p class="footer-copy">© 2025 LilyAisland · Built by CHOWLAN233 · Inspired by iPhone Dynamic Island</p>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ I18N DATA ============
+const i18n = {
+  zh: {
+    'nav.demo': '演示 Demo',
+    'nav.features': '功能 Features',
+    'nav.settings': '设置 Settings',
+    'nav.install': '安装 Install',
+    'hero.badge': '✨ macOS 灵动岛',
+    'hero.title': 'LilyAisland',
+    'hero.subtitle': '将 iPhone 灵动岛体验带到 Mac。一个悬浮在屏幕顶部的交互式胶囊形控件，集系统监控、媒体控制、快捷操作为一体。',
+    'hero.tryDemo': '🎮 体验演示',
+    'hero.download': '⬇️ 下载应用',
+    'hero.viewSource': '📁 查看源码',
+    'demo.title': '🎮 交互式演示',
+    'demo.desc': '悬停或点击下方的灵动岛，体验真实的各种交互模式',
+    'demo.collapsed': '🔵 折叠状态',
+    'demo.expanded': '📊 展开仪表盘',
+    'demo.volume': '🔊 音量 HUD',
+    'demo.brightness': '☀️ 亮度 HUD',
+    'demo.dnd': '🌙 勿扰模式',
+    'demo.batteryMode': '🔋 电池提醒',
+    'demo.connectivity': '🎧 蓝牙连接',
+    'demo.media': '🎵 音乐播放',
+    'demo.hint': '💡 也可以直接在灵动岛上悬停和点击',
+    'demo.battery': '电池',
+    'demo.charging': '交流电',
+    'demo.adapter': '适配器功率',
+    'demo.bluetooth': '蓝牙设备',
+    'demo.memory': '内存',
+    'demo.wallpaper': 'macOS 桌面',
+    'features.title': '✨ 全部功能',
+    'features.desc': '8 大模块覆盖系统监控、媒体控制和快捷操作，点击每个卡片即可体验交互',
+    'feat.media.title': '正在播放',
+    'feat.media.desc': 'Apple Music 曲目信息、专辑封面、播放进度。支持播放/暂停、上一首、下一首。',
+    'feat.volume.title': '音量控制',
+    'feat.volume.desc': '拦截系统音量键，用自定义 HUD 替代系统弹窗。即时响应，零延迟跟手。',
+    'feat.brightness.title': '亮度调节',
+    'feat.brightness.desc': '平滑橡皮筋式亮度过渡动画，60fps 动画器驱动，追赶目标值。',
+    'feat.battery.title': '电池监控',
+    'feat.battery.desc': '实时电量、充/放电功率（电压×电流）、适配器功率。插拔和低电量提醒。',
+    'feat.battery.unplug': '拔掉电源',
+    'feat.battery.plug': '插上电源',
+    'feat.dnd.title': '专注模式',
+    'feat.dnd.desc': '一键切换勿扰模式，自定义指示器。可选系统音效反馈。',
+    'feat.connectivity.title': '连接设备',
+    'feat.connectivity.desc': '蓝牙设备连接/断开通知，智能识别设备类型（AirPods、耳机、音箱）。',
+    'feat.system.title': '系统状态',
+    'feat.system.desc': 'CPU、GPU、内存使用率及温度读数。通过 AppleSMC 获取硬件级数据。',
+    'feat.i18n.title': '多语言支持',
+    'feat.i18n.desc': '完整的中文和 English 本地化，覆盖 ~110 个字符串键。设置中即时切换，无需重启。',
+    'dnd.off': '专注：关',
+    'dnd.on': '专注：开',
+    'connectivity.connected': '已连接：AirPods Pro',
+    'connectivity.disconnected': '未连接',
+    'connectivity.disconnect': '断开',
+    'connectivity.connect': '连接',
+    'system.mem': '内存',
+    'system.temp': '温度',
+    'settings.title': '⚙️ 设置面板',
+    'settings.desc': '7 大设置分类，精细控制每一个模块的行为',
+    'settings.window': '设置 — LilyAisland',
+    'settings.general': '⚙️ 通用',
+    'settings.battery': '🔋 电池',
+    'settings.connectivity': '🎧 连接设备',
+    'settings.focus': '🌙 专注',
+    'settings.display': '☀️ 显示',
+    'settings.sound': '🔊 声音',
+    'settings.nowplaying': '🎵 正在播放',
+    'install.title': '📥 安装方式',
+    'install.desc': '两种方式任选 — 直接下载或从源码构建',
+    'install.download': '⬇️ 下载安装（推荐）',
+    'install.step1': '前往 Releases 页面下载最新 .zip',
+    'install.step2': '解压并拖入「应用程序」文件夹',
+    'install.step3': '启动应用，根据提示授予「辅助功能」权限',
+    'install.step4': '灵动岛将出现在屏幕顶部中央 ✨',
+    'install.build': '🛠️ 从源码构建',
+    'install.buildNote': '需要 Xcode 16+，macOS 15.2+。Product > Archive 或使用 xcodebuild 命令行构建。'
+  },
+  en: {
+    'nav.demo': 'Demo',
+    'nav.features': 'Features',
+    'nav.settings': 'Settings',
+    'nav.install': 'Install',
+    'hero.badge': '✨ macOS Dynamic Island',
+    'hero.title': 'LilyAisland',
+    'hero.subtitle': 'Bring iPhone Dynamic Island to your Mac. A floating interactive pill-shaped widget that combines system monitoring, media control, and quick actions.',
+    'hero.tryDemo': '🎮 Try Demo',
+    'hero.download': '⬇️ Download',
+    'hero.viewSource': '📁 View Source',
+    'demo.title': '🎮 Interactive Demo',
+    'demo.desc': 'Hover or click the island below to experience real interaction modes',
+    'demo.collapsed': '🔵 Collapsed',
+    'demo.expanded': '📊 Dashboard',
+    'demo.volume': '🔊 Volume HUD',
+    'demo.brightness': '☀️ Brightness HUD',
+    'demo.dnd': '🌙 Focus Mode',
+    'demo.batteryMode': '🔋 Battery Alert',
+    'demo.connectivity': '🎧 Bluetooth',
+    'demo.media': '🎵 Now Playing',
+    'demo.hint': '💡 You can also hover and click directly on the island',
+    'demo.battery': 'Battery',
+    'demo.charging': 'AC Power',
+    'demo.adapter': 'Adapter Wattage',
+    'demo.bluetooth': 'Bluetooth',
+    'demo.memory': 'Memory',
+    'demo.wallpaper': 'macOS Desktop',
+    'features.title': '✨ All Features',
+    'features.desc': '8 modules covering system monitoring, media control, and quick actions. Click each card to interact.',
+    'feat.media.title': 'Now Playing',
+    'feat.media.desc': 'Apple Music track info, album artwork, playback progress. Play/pause, previous, next controls.',
+    'feat.volume.title': 'Volume Control',
+    'feat.volume.desc': 'Intercepts system volume keys and replaces the macOS bezel with a custom HUD. Instant zero-latency response.',
+    'feat.brightness.title': 'Brightness Control',
+    'feat.brightness.desc': 'Smooth rubber-banded brightness transitions. 60fps animator drives the chase towards the target value.',
+    'feat.battery.title': 'Battery Monitor',
+    'feat.battery.desc': 'Real-time percentage, charge/discharge wattage (voltage×current), adapter wattage. Plug/unplug and low-battery alerts.',
+    'feat.battery.unplug': 'Unplug',
+    'feat.battery.plug': 'Plug In',
+    'feat.dnd.title': 'Focus (DND)',
+    'feat.dnd.desc': 'One-click Do Not Disturb toggle with custom indicator. Optional system sound feedback.',
+    'feat.connectivity.title': 'Connectivity',
+    'feat.connectivity.desc': 'Bluetooth device connect/disconnect notifications with smart device type recognition (AirPods, headphones, speakers).',
+    'feat.system.title': 'System Stats',
+    'feat.system.desc': 'CPU, GPU, Memory usage and temperature readings via AppleSMC hardware-level data.',
+    'feat.i18n.title': 'Localization',
+    'feat.i18n.desc': 'Complete Chinese and English localization covering ~110 string keys. Instant switch in Settings, no restart needed.',
+    'dnd.off': 'Focus: Off',
+    'dnd.on': 'Focus: On',
+    'connectivity.connected': 'Connected: AirPods Pro',
+    'connectivity.disconnected': 'Disconnected',
+    'connectivity.disconnect': 'Disconnect',
+    'connectivity.connect': 'Connect',
+    'system.mem': 'Memory',
+    'system.temp': 'Temperature',
+    'settings.title': '⚙️ Settings Panel',
+    'settings.desc': '7 setting categories for fine-grained control over every module',
+    'settings.window': 'Settings — LilyAisland',
+    'settings.general': '⚙️ General',
+    'settings.battery': '🔋 Battery',
+    'settings.connectivity': '🎧 Connectivity',
+    'settings.focus': '🌙 Focus',
+    'settings.display': '☀️ Display',
+    'settings.sound': '🔊 Sound',
+    'settings.nowplaying': '🎵 Now Playing',
+    'install.title': '📥 Installation',
+    'install.desc': 'Two ways — download directly or build from source',
+    'install.download': '⬇️ Download (Recommended)',
+    'install.step1': 'Go to Releases page, download latest .zip',
+    'install.step2': 'Unzip and drag to Applications folder',
+    'install.step3': 'Launch the app, grant Accessibility permission',
+    'install.step4': 'The island appears at the top center of your screen ✨',
+    'install.build': '🛠️ Build from Source',
+    'install.buildNote': 'Requires Xcode 16+, macOS 15.2+. Product > Archive or use xcodebuild CLI.'
+  }
+};
+
+// ============ STATE ============
+let currentLang = 'zh';
+let currentMode = 'collapsed';
+let islandState = { cpu: 32, gpu: 18, mem: 45, cpuTemp: 62, gpuTemp: 48, battery: 85, charging: true, dndOn: false, btConnected: true, btDevice: 'AirPods Pro', playing: false, volume: 65, brightness: 80 };
+let autoRotateTimer = null;
+
+// ============ I18N SWITCH ============
+function switchLang(lang) {
+  currentLang = lang;
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  document.getElementById('btnZh').classList.toggle('active', lang === 'zh');
+  document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (i18n[lang][key]) el.textContent = i18n[lang][key];
+  });
+  // Update dynamic texts
+  updateDNDLabel();
+  updateBTLabel();
+  updateChargerBtn();
+  updateLangFeedback();
+  updateDemoHint();
+  renderSettingsTab();
+}
+
+function t(key) {
+  return i18n[currentLang][key] || key;
+}
+
+function updateLangFeedback() {
+  const fb = document.getElementById('langFeedback');
+  if (fb) fb.textContent = currentLang === 'zh' ? '✅ 已切换为中文' : '✅ Switched to English';
+  setTimeout(() => { if (fb) fb.textContent = ''; }, 2000);
+}
+
+// ============ ISLAND DEMO ============
+function handleIslandHover(enter) {
+  if (currentMode !== 'collapsed' && currentMode !== 'hovered') return;
+  const island = document.getElementById('island');
+  if (enter) {
+    island.className = 'island hovered';
+    currentMode = 'hovered';
+    toast(t('demo.hint'));
+  } else {
+    island.className = 'island collapsed';
+    currentMode = 'collapsed';
+  }
+  highlightDemoBtn(currentMode);
+}
+
+function handleIslandClick() {
+  if (currentMode === 'expanded') {
+    showMode('collapsed');
+  } else if (currentMode !== 'collapsed' && currentMode !== 'hovered') {
+    return; // HUD modes: click through
+  } else {
+    showMode('expanded');
+  }
+}
+
+function showMode(mode) {
+  currentMode = mode;
+  const island = document.getElementById('island');
+  const simple = document.getElementById('islandSimple');
+  const expanded = document.getElementById('islandExpanded');
+
+  // Reset
+  island.className = 'island';
+  simple.innerHTML = '';
+  simple.style.display = 'flex';
+  expanded.style.display = 'none';
+
+  switch (mode) {
+    case 'collapsed':
+      island.classList.add('collapsed');
+      simple.innerHTML = `<div class="island-dots"><div class="island-dot cpu-dot" id="cpuDot"></div><div class="island-dot mem-dot" id="memDot"></div></div>`;
+      updateDots();
+      toast(t('demo.collapsed'));
+      break;
+    case 'hovered':
+      island.classList.add('hovered');
+      simple.innerHTML = `<div class="island-labels"><span style="font-size:.78rem">🖥️</span><span class="island-label">CPU ${islandState.cpu}%</span><span class="island-label">GPU ${islandState.gpu}%</span><span class="island-label">💾 ${islandState.mem}%</span></div>`;
+      toast(t('demo.hint'));
+      break;
+    case 'expanded':
+      island.classList.add('expanded');
+      simple.style.display = 'none';
+      expanded.style.display = 'flex';
+      updateExpandedContent();
+      toast(t('demo.expanded'));
+      break;
+    case 'volume':
+      island.classList.add('vol-mode');
+      simple.innerHTML = `<span style="font-size:1rem;margin-right:10px">🔊</span><div style="flex:1;height:4px;background:rgba(255,255,255,.12);border-radius:2px;max-width:220px"><div style="height:100%;background:#5e9eff;border-radius:2px;width:${islandState.volume}%;transition:width .3s"></div></div><span style="font-size:.8rem;color:rgba(255,255,255,.7);margin-left:10px">${islandState.volume}%</span>`;
+      toast(t('demo.volume'));
+      break;
+    case 'brightness':
+      island.classList.add('brightness-mode');
+      simple.innerHTML = `<span style="font-size:1rem;margin-right:10px">☀️</span><div style="flex:1;height:4px;background:rgba(255,255,255,.12);border-radius:2px;max-width:220px"><div style="height:100%;background:#f59e0b;border-radius:2px;width:${islandState.brightness}%;transition:width .3s"></div></div><span style="font-size:.8rem;color:rgba(255,255,255,.7);margin-left:10px">${islandState.brightness}%</span>`;
+      toast(t('demo.brightness'));
+      break;
+    case 'dnd':
+      island.classList.add('dnd-mode');
+      islandState.dndOn = !islandState.dndOn;
+      simple.innerHTML = `<span style="font-size:1rem;margin-right:10px">🌙</span><span style="font-size:.8rem;color:rgba(255,255,255,.7)">${islandState.dndOn ? (currentLang==='zh'?'勿扰：开':'Focus: On') : (currentLang==='zh'?'勿扰：关':'Focus: Off')}</span>`;
+      updateDNDToggle();
+      toast(islandState.dndOn ? (currentLang==='zh'?'🌙 勿扰模式已开启':'🌙 Focus Mode On') : (currentLang==='zh'?'🌙 勿扰模式已关闭':'🌙 Focus Mode Off'));
+      break;
+    case 'battery':
+      island.classList.add('battery-mode');
+      simple.innerHTML = `<span style="font-size:1rem;margin-right:8px;color:#22c55e">🔋</span><span style="font-weight:600;color:#fff">${islandState.battery}%</span><span style="font-size:.75rem;color:rgba(255,255,255,.5);margin-left:6px">${islandState.charging ? '⚡ 18.5W' : '🔋 5.2W'}</span>`;
+      toast(currentLang==='zh'?`🔋 电池：${islandState.battery}%`:`🔋 Battery: ${islandState.battery}%`);
+      break;
+    case 'connectivity':
+      island.classList.add('connectivity-mode');
+      simple.innerHTML = `<span style="font-size:1rem;margin-right:8px">🎧</span><span style="font-size:.8rem;color:rgba(255,255,255,.7)">${islandState.btConnected ? islandState.btDevice : (currentLang==='zh'?'未连接':'Disconnected')}</span>`;
+      toast(islandState.btConnected ? `🎧 ${islandState.btDevice}` : (currentLang==='zh'?'🎧 蓝牙已断开':'🎧 Bluetooth Disconnected'));
+      break;
+    case 'media':
+      island.classList.add('expanded');
+      simple.style.display = 'none';
+      expanded.style.display = 'flex';
+      expanded.innerHTML = mediaPlayerHTML();
+      islandState.playing = true;
+      updatePlayBtn();
+      toast(t('demo.media'));
+      break;
+  }
+  highlightDemoBtn(mode);
+
+  // Auto-return for HUD modes
+  clearTimeout(autoRotateTimer);
+  if (['volume','brightness','dnd','battery','connectivity'].includes(mode)) {
+    autoRotateTimer = setTimeout(() => showMode('collapsed'), 2500);
+  }
+}
+
+function mediaPlayerHTML() {
+  return `<div style="display:flex;align-items:center;gap:16px;width:100%">
+    <div class="player-artwork" style="width:72px;height:72px;border-radius:14px">🎶</div>
+    <div style="flex:1">
+      <div class="player-song">Blinding Lights</div>
+      <div class="player-artist">The Weeknd</div>
+      <div class="player-progress"><div class="player-progress-bar" style="width:45%"></div></div>
+      <div class="player-controls">
+        <button class="player-btn" onclick="event.stopPropagation();mediaControl('prev')">⏮</button>
+        <button class="player-btn play-btn" onclick="event.stopPropagation();mediaControl('play')">⏸️</button>
+        <button class="player-btn" onclick="event.stopPropagation();mediaControl('next')">⏭</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function updateExpandedContent() {
+  document.getElementById('expBattery').textContent = islandState.battery + '%';
+  document.getElementById('expWattage').textContent = islandState.charging ? '18.5W' : '5.2W';
+  document.getElementById('expBT').textContent = islandState.btConnected ? islandState.btDevice : '—';
+  document.getElementById('expCPU').textContent = islandState.cpu + '%';
+  document.getElementById('expGPU').textContent = islandState.gpu + '%';
+  document.getElementById('expMem').textContent = islandState.mem + '%';
+  document.getElementById('expCPUTemp').textContent = islandState.cpuTemp + '°C';
+  document.getElementById('expGPUTemp').textContent = islandState.gpuTemp + '°C';
+}
+
+function updateDots() {
+  const cpuDot = document.getElementById('cpuDot');
+  const memDot = document.getElementById('memDot');
+  if (cpuDot) {
+    cpuDot.classList.remove('high', 'critical');
+    if (islandState.cpu > 80) cpuDot.classList.add('critical');
+    else if (islandState.cpu > 50) cpuDot.classList.add('high');
+  }
+  if (memDot) {
+    memDot.classList.remove('high', 'critical');
+    if (islandState.mem > 80) memDot.classList.add('critical');
+    else if (islandState.mem > 60) memDot.classList.add('high');
+  }
+}
+
+function highlightDemoBtn(mode) {
+  document.querySelectorAll('.demo-ctrl-btn').forEach(b => b.classList.remove('active'));
+  const map = {collapsed:0, expanded:1, volume:2, brightness:3, dnd:4, battery:5, connectivity:6, media:7};
+  const btns = document.querySelectorAll('.demo-ctrl-btn');
+  if (map[mode] !== undefined && btns[map[mode]]) btns[map[mode]].classList.add('active');
+}
+
+// ============ FEATURE INTERACTIONS ============
+function featureClick(card, mode) {
+  card.style.transform = 'scale(.98)';
+  setTimeout(() => { card.style.transform = ''; }, 150);
+  const interactive = card.querySelector('.feature-interactive');
+  if (interactive) {
+    interactive.classList.add('clicked');
+    setTimeout(() => interactive.classList.remove('clicked'), 600);
+  }
+  showMode(mode);
+  // Scroll demo into view on mobile
+  document.getElementById('demo').scrollIntoView({behavior:'smooth'});
+}
+
+function mediaControl(action) {
+  switch (action) {
+    case 'play':
+      islandState.playing = !islandState.playing;
+      updatePlayBtn();
+      toast(islandState.playing ? (currentLang==='zh'?'▶️ 正在播放':'▶️ Playing') : (currentLang==='zh'?'⏸️ 已暂停':'⏸️ Paused'));
+      break;
+    case 'prev':
+      toast(currentLang==='zh'?'⏮️ 上一首':'⏮️ Previous Track');
+      break;
+    case 'next':
+      toast(currentLang==='zh'?'⏭️ 下一首':'⏭️ Next Track');
+      break;
+  }
+}
+
+function updatePlayBtn() {
+  const btn = document.getElementById('playBtn');
+  if (btn) btn.textContent = islandState.playing ? '⏸️' : '▶️';
+}
+
+function updateVolSlider(val) {
+  islandState.volume = parseInt(val);
+  document.getElementById('volSlider').style.width = val + '%';
+}
+
+function updateBriSlider(val) {
+  islandState.brightness = parseInt(val);
+  document.getElementById('briSlider').style.width = val + '%';
+}
+
+function toggleCharger() {
+  islandState.charging = !islandState.charging;
+  updateChargerBtn();
+  if (islandState.battery > 80 && !islandState.charging) islandState.battery = Math.min(100, islandState.battery - 5);
+  document.getElementById('battPct').textContent = islandState.battery + '%';
+  if (currentMode === 'expanded') updateExpandedContent();
+  toast(islandState.charging ? (currentLang==='zh'?'🔌 电源已连接':'🔌 Charger Connected') : (currentLang==='zh'?'🔋 使用电池供电':'🔋 On Battery'));
+}
+
+function updateChargerBtn() {
+  const btn = document.getElementById('chargerBtn');
+  if (btn) btn.textContent = islandState.charging ? t('feat.battery.unplug') : t('feat.battery.plug');
+}
+
+function toggleDND() {
+  islandState.dndOn = !islandState.dndOn;
+  updateDNDToggle();
+  updateDNDLabel();
+  toast(islandState.dndOn ? (currentLang==='zh'?'🌙 勿扰模式已开启':'🌙 Focus Mode On') : (currentLang==='zh'?'🌙 勿扰模式已关闭':'🌙 Focus Mode Off'));
+}
+
+function updateDNDToggle() {
+  const toggle = document.getElementById('dndToggle');
+  if (toggle) toggle.classList.toggle('on', islandState.dndOn);
+}
+
+function updateDNDLabel() {
+  const status = document.getElementById('dndStatus');
+  if (status) status.textContent = islandState.dndOn ? t('dnd.on') : t('dnd.off');
+}
+
+function toggleBT() {
+  islandState.btConnected = !islandState.btConnected;
+  updateBTLabel();
+  toast(islandState.btConnected ? `🎧 ${islandState.btDevice} connected` : (currentLang==='zh'?'🎧 蓝牙已断开':'🎧 Bluetooth Disconnected'));
+}
+
+function updateBTLabel() {
+  const label = document.getElementById('btDevice');
+  if (label) label.textContent = islandState.btConnected ? t('connectivity.connected') : t('connectivity.disconnected');
+  const btn = document.querySelector('#featConnectivity .mini-btn');
+  if (btn) btn.textContent = islandState.btConnected ? t('connectivity.disconnect') : t('connectivity.connect');
+}
+
+function updateDemoHint() {
+  // Dynamic update if needed
+}
+
+function refreshStats() {
+  islandState.cpu = Math.floor(Math.random() * 40 + 10);
+  islandState.gpu = Math.floor(Math.random() * 35 + 5);
+  islandState.mem = Math.floor(Math.random() * 30 + 30);
+  islandState.cpuTemp = Math.floor(Math.random() * 25 + 45);
+  islandState.gpuTemp = Math.floor(Math.random() * 20 + 35);
+  document.getElementById('sysCPU').textContent = islandState.cpu + '%';
+  document.getElementById('sysGPU').textContent = islandState.gpu + '%';
+  document.getElementById('sysMem').textContent = islandState.mem + '%';
+  document.getElementById('sysTemp').textContent = islandState.cpuTemp + '°C';
+  if (currentMode === 'expanded') updateExpandedContent();
+  if (currentMode === 'collapsed') updateDots();
+  toast(currentLang==='zh'?'🔄 系统状态已刷新':'🔄 Stats Refreshed');
+}
+
+// ============ SETTINGS TABS ============
+const settingsData = {
+  general: {
+    zh: [
+      {label:'开机自启', desc:'通过 SMAppService 注册登录项', type:'toggle', val:true},
+      {label:'触觉反馈', desc:'悬停/点击时触发 NSHapticFeedback', type:'toggle', val:true},
+      {label:'全屏悬停触发', desc:'在全屏应用中也允许悬停展开', type:'toggle', val:false},
+      {label:'语言', desc:'即时切换，无需重启应用', type:'select', val:'zh'},
+      {label:'刘海圆角半径', desc:'4-16 pt，默认 7pt', type:'slider', val:7, min:4, max:16, step:0.5},
+    ],
+    en: [
+      {label:'Launch at Login', desc:'Register via SMAppService', type:'toggle', val:true},
+      {label:'Haptic Feedback', desc:'NSHapticFeedback on hover/click', type:'toggle', val:true},
+      {label:'Fullscreen Hover', desc:'Allow hover expansion in fullscreen apps', type:'toggle', val:false},
+      {label:'Language', desc:'Instant switch, no restart needed', type:'select', val:'en'},
+      {label:'Notch Curve Radius', desc:'4–16 pt, default 7pt', type:'slider', val:7, min:4, max:16, step:0.5},
+    ]
+  },
+  battery: {
+    zh: [
+      {label:'启用电池提醒', type:'toggle', val:true},
+      {label:'插拔提醒', type:'toggle', val:true},
+      {label:'显示百分比', type:'toggle', val:true},
+      {label:'驻留时长', desc:'1-10 秒', type:'slider', val:3, min:1, max:10, step:0.5},
+      {label:'低电量阈值', desc:'5-50%', type:'slider', val:20, min:5, max:50, step:5},
+    ],
+    en: [
+      {label:'Enable Battery Alerts', type:'toggle', val:true},
+      {label:'Plug/Unplug Notifications', type:'toggle', val:true},
+      {label:'Show Percentage', type:'toggle', val:true},
+      {label:'Dwell Time', desc:'1–10 seconds', type:'slider', val:3, min:1, max:10, step:0.5},
+      {label:'Low Battery Threshold', desc:'5–50%', type:'slider', val:20, min:5, max:50, step:5},
+    ]
+  },
+  connectivity: {
+    zh: [
+      {label:'启用蓝牙提醒', type:'toggle', val:true},
+      {label:'显示设备名称', type:'toggle', val:true},
+      {label:'驻留时长', desc:'1-10 秒', type:'slider', val:3, min:1, max:10, step:0.5},
+    ],
+    en: [
+      {label:'Enable Bluetooth Alerts', type:'toggle', val:true},
+      {label:'Show Device Name', type:'toggle', val:true},
+      {label:'Dwell Time', desc:'1–10 seconds', type:'slider', val:3, min:1, max:10, step:0.5},
+    ]
+  },
+  focus: {
+    zh: [
+      {label:'启用专注切换', type:'toggle', val:true},
+      {label:'驻留时长', desc:'1-10 秒', type:'slider', val:5, min:1, max:10, step:0.5},
+      {label:'进入时播放声音', desc:'系统 "Glass" 音效', type:'toggle', val:false},
+      {label:'隐藏标签', type:'toggle', val:false},
+    ],
+    en: [
+      {label:'Enable Focus Toggle', type:'toggle', val:true},
+      {label:'Dwell Time', desc:'1–10 seconds', type:'slider', val:5, min:1, max:10, step:0.5},
+      {label:'Play Sound on Enter', desc:'System "Glass" sound', type:'toggle', val:false},
+      {label:'Hide Label', type:'toggle', val:false},
+    ]
+  },
+  display: {
+    zh: [
+      {label:'启用亮度弹窗', type:'toggle', val:true},
+      {label:'驻留时长', desc:'1-5 秒', type:'slider', val:2, min:1, max:5, step:0.5},
+      {label:'步长', desc:'每次按键调整量', type:'slider', val:6, min:1, max:32, step:1},
+    ],
+    en: [
+      {label:'Enable Brightness Overlay', type:'toggle', val:true},
+      {label:'Dwell Time', desc:'1–5 seconds', type:'slider', val:2, min:1, max:5, step:0.5},
+      {label:'Step Size', desc:'Adjustment per key press', type:'slider', val:6, min:1, max:32, step:1},
+    ]
+  },
+  sound: {
+    zh: [
+      {label:'启用音量弹窗', type:'toggle', val:true},
+      {label:'驻留时长', desc:'1-5 秒', type:'slider', val:2, min:1, max:5, step:0.5},
+      {label:'步长', desc:'每次按键调整量', type:'slider', val:6, min:1, max:32, step:1},
+    ],
+    en: [
+      {label:'Enable Volume Overlay', type:'toggle', val:true},
+      {label:'Dwell Time', desc:'1–5 seconds', type:'slider', val:2, min:1, max:5, step:0.5},
+      {label:'Step Size', desc:'Adjustment per key press', type:'slider', val:6, min:1, max:32, step:1},
+    ]
+  },
+  nowplaying: {
+    zh: [
+      {label:'启用正在播放', type:'toggle', val:true},
+      {label:'显示专辑封面', type:'toggle', val:true},
+      {label:'显示进度条', type:'toggle', val:true},
+      {label:'轮询间隔', desc:'0.5-5 秒', type:'slider', val:1, min:0.5, max:5, step:0.5},
+    ],
+    en: [
+      {label:'Enable Now Playing', type:'toggle', val:true},
+      {label:'Show Album Artwork', type:'toggle', val:true},
+      {label:'Show Progress Bar', type:'toggle', val:true},
+      {label:'Polling Interval', desc:'0.5–5 seconds', type:'slider', val:1, min:0.5, max:5, step:0.5},
+    ]
+  }
+};
+
+let currentSettingTab = 'general';
+
+function switchSettingTab(el, tab) {
+  document.querySelectorAll('.settings-sidebar-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  currentSettingTab = tab;
+  renderSettingsTab();
+}
+
+function renderSettingsTab() {
+  const data = (settingsData[currentSettingTab] || settingsData.general)[currentLang] || settingsData.general.zh;
+  const container = document.getElementById('settingsContent');
+  let html = '';
+  data.forEach((item, i) => {
+    html += `<div class="settings-row">`;
+    html += `<div><div class="settings-row-label">${item.label}</div>`;
+    if (item.desc) html += `<div class="settings-row-desc">${item.desc}</div>`;
+    html += `</div>`;
+    if (item.type === 'toggle') {
+      html += `<div class="mini-toggle ${item.val ? 'on' : ''}" onclick="this.classList.toggle('on');toast('${currentLang==='zh'?'✅ 设置已更新':'✅ Setting updated'}')"></div>`;
+    } else if (item.type === 'slider') {
+      html += `<input type="range" min="${item.min}" max="${item.max}" step="${item.step}" value="${item.val}" class="setting-slider" onchange="toast('${currentLang==='zh'?'✅ 值：':'✅ Value: '}'+this.value)">`;
+    } else if (item.type === 'select') {
+      html += `<select style="background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:4px 10px;font-size:.82rem" onchange="toast('${currentLang==='zh'?'✅ 语言已切换':'✅ Language switched')}"><option>${currentLang==='zh'?'中文':'English'}</option><option>${currentLang==='zh'?'English':'中文'}</option></select>`;
+    }
+    html += `</div>`;
+  });
+  container.innerHTML = html;
+}
+
+// ============ TOAST ============
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timeout);
+  t._timeout = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// ============ SCROLL REVEAL ============
+function initScrollReveal() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.feature-card, .install-card, .settings-demo, .demo-mac-frame').forEach(el => {
+    el.classList.add('scroll-reveal');
+    observer.observe(el);
+  });
+  // Trigger feature cards immediately if visible
+  setTimeout(() => {
+    document.querySelectorAll('.scroll-reveal').forEach(el => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight) el.classList.add('visible');
+    });
+  }, 300);
+}
+
+// ============ INIT ============
+function init() {
+  renderSettingsTab();
+  updateDots();
+  initScrollReveal();
+  // Simulate random system stat updates every 3s
+  setInterval(() => {
+    islandState.cpu = Math.floor(Math.random() * 35 + 10);
+    islandState.mem = Math.floor(Math.random() * 25 + 30);
+    islandState.cpuTemp = Math.floor(Math.random() * 20 + 45);
+    const sysCPU = document.getElementById('sysCPU');
+    const sysMem = document.getElementById('sysMem');
+    const sysTemp = document.getElementById('sysTemp');
+    if (sysCPU && currentMode !== 'expanded') sysCPU.textContent = islandState.cpu + '%';
+    if (sysMem) sysMem.textContent = islandState.mem + '%';
+    if (sysTemp) sysTemp.textContent = islandState.cpuTemp + '°C';
+    if (currentMode === 'expanded') {
+      const expCPU = document.getElementById('expCPU');
+      const expMem = document.getElementById('expMem');
+      const expCPUTemp = document.getElementById('expCPUTemp');
+      if (expCPU) expCPU.textContent = islandState.cpu + '%';
+      if (expMem) expMem.textContent = islandState.mem + '%';
+      if (expCPUTemp) expCPUTemp.textContent = islandState.cpuTemp + '°C';
+    }
+  }, 3000);
+
+  // Auto-demo rotation every 8 seconds when idle
+  setInterval(() => {
+    if (currentMode === 'collapsed') {
+      const modes = ['volume','brightness','dnd','battery','connectivity'];
+      const randomMode = modes[Math.floor(Math.random() * modes.length)];
+      showMode(randomMode);
+    }
+  }, 10000);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

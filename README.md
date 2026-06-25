@@ -4,6 +4,8 @@
   <img src="https://img.shields.io/badge/platform-macOS%2015.2+-blue" alt="platform">
   <img src="https://img.shields.io/badge/swift-5.0-orange" alt="swift">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
+  <br>
+  <a href="https://chowlan233.github.io/LilyAisland"><b>🌐 在线体验 / Live Demo →</b></a>
 </p>
 
 <p align="center">
@@ -185,6 +187,8 @@ Built by [CHOWLAN233](https://github.com/CHOWLAN233).
   <img src="https://img.shields.io/badge/平台-macOS%2015.2+-blue" alt="platform">
   <img src="https://img.shields.io/badge/swift-5.0-orange" alt="swift">
   <img src="https://img.shields.io/badge/协议-MIT-green" alt="license">
+  <br>
+  <a href="https://chowlan233.github.io/LilyAisland"><b>🌐 在线体验 / Live Demo →</b></a>
 </p>
 
 **LilyAisland** 将 iPhone 灵动岛的体验带到 Mac 菜单栏。它是一个悬浮于屏幕顶部的交互式胶囊形控件，让你一眼就能看到系统状态，并能即时调节音量、亮度、专注模式、电池以及正在播放的音乐。
