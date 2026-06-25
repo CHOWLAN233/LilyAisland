@@ -114,8 +114,8 @@ enum L10n: String {
 // 每个 key 的 "zh" / "en" 翻译
 fileprivate let rawStrings: [L10n: [String: String]] = [
     .menu_preferences:           ["zh": "偏好设置...",      "en": "Preferences..."],
-    .menu_quit:                  ["zh": "退出 Lily Island",  "en": "Quit Lily Island"],
-    .menu_app_name:              ["zh": "Lily 灵动岛",       "en": "Lily Island"],
+    .menu_quit:                  ["zh": "退出 LilyAisland",  "en": "Quit LilyAisland"],
+    .menu_app_name:              ["zh": "LilyAisland",       "en": "LilyAisland"],
 
     .settings_general:           ["zh": "通用",               "en": "General"],
     .settings_notifications:     ["zh": "通知",               "en": "Notifications"],

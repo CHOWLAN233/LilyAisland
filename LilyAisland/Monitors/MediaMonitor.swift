@@ -4,12 +4,12 @@ import AppKit
 
 class MediaMonitor: ObservableObject {
     @Published var trackName: String = "未在播放"
-    @Published var artistName: String = "Lily Island"
+    @Published var artistName: String = "LilyAisland"
     @Published var isPlaying: Bool = false
     @Published var position: Double = 0
     @Published var duration: Double = 0
     @Published var artworkImage: NSImage? = nil
-    
+
     // 防抖缓存，避免重复触发相同的 UI 更新
     private var lastFetchedTrack: String = ""
     private var timer: Timer?
@@ -39,12 +39,12 @@ class MediaMonitor: ObservableObject {
             RunLoop.main.add(timer, forMode: .common)
         }
     }
-    
+
     func stop() {
         timer?.invalidate()
         timer = nil
     }
-    
+
     private func updateMediaInfo() {
         let scriptSource = """
         if application "Music" is running then
@@ -64,20 +64,20 @@ class MediaMonitor: ObservableObject {
             return "NOT_RUNNING"
         end if
         """
-        
+
         DispatchQueue.global(qos: .utility).async {
             let task = Process()
             task.launchPath = "/usr/bin/osascript"
             task.arguments = ["-e", scriptSource]
-            
+
             let pipe = Pipe()
             task.standardOutput = pipe
             task.standardError = Pipe()
-            
+
             do {
                 try task.run()
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                
+
                 if let stringValue = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .newlines) {
                     self.parseAppleScriptOutput(stringValue)
                 }
@@ -86,12 +86,12 @@ class MediaMonitor: ObservableObject {
             }
         }
     }
-    
+
     private func parseAppleScriptOutput(_ output: String) {
         if output == "NOT_RUNNING" || output == "STOPPED" || output.isEmpty {
             DispatchQueue.main.async {
                 self.trackName = "未在播放"
-                self.artistName = "Lily Island"
+                self.artistName = "LilyAisland"
                 self.isPlaying = false
                 self.position = 0
                 self.duration = 0
